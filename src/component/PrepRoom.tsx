@@ -78,6 +78,29 @@ export const PrepRoom = () => {
               </button>
             </div>
           </div>
+
+          {isConnected && (
+        <div className="control">
+          <div className="left-control">
+            <button className="btn" onClick={() => setMic((a) => !a)}>
+              Mic
+            </button>
+            <button className="btn" onClick={() => setCamera((a) => !a)}>
+              Cam
+            </button>
+          </div>
+          <button
+            className={`btn btn-phone ${calling ? "btn-phone-active" : ""}`}
+            onClick={() => setCalling((a) => !a)}
+          >
+            {calling ? (
+              <i className="i-phone-hangup" />
+            ) : (
+              <i className="i-mdi-phone" />
+            )}
+          </button>
+        </div>
+      )}
         </div>
       ) : (
         <p>Not connected</p>
