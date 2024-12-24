@@ -4,20 +4,20 @@ import "./index.css";
 import App from "./App.tsx";
 import AgoraRTC, { AgoraRTCProvider } from "agora-rtc-react";
 import { BrowserRouter, Route, Routes } from "react-router";
-import PrepRoom from "./component/PrepRoom.tsx";
+// import PrepRoom from "./component/PrepRoom.tsx";
 
 // In video call, set mode to "rtc"
 const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <BrowserRouter>
-      <AgoraRTCProvider client={client}>
+    <AgoraRTCProvider client={client}>
+      <BrowserRouter>
         <Routes>
           <Route path="/" element={<App />} />
-          <Route path="/prep-room/:meetingCode" element={<PrepRoom />} />
+          {/* <Route path="/prep-room/:meetingCode" element={<PrepRoom />} /> */}
         </Routes>{" "}
-      </AgoraRTCProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AgoraRTCProvider>
   </StrictMode>
 );

@@ -1,48 +1,48 @@
 import {
   LocalUser,
-  useIsConnected,
   useJoin,
   useLocalMicrophoneTrack,
   useLocalCameraTrack,
   usePublish,
 } from "agora-rtc-react";
-import { useEffect, useState } from "react";
-import { useParams } from "react-router";
-
+import { useState } from "react";
+// import { useNavigate } from "react-router";
 import "../styles.css";
+import { PrepRoomProp } from "./Home";
 
-export const PrepRoom = () => {
-  const [calling, setCalling] = useState(true);
-  const isConnected = useIsConnected();
-  const [channel, setChannel] = useState("");
+export const PrepRoom = ({ channel, step, setStep }: PrepRoomProp) => {
+  // const [calling, setCalling] = useState(true);
+  // const isConnected = useIsConnected();
   const [username, setUsername] = useState("");
 
-  const { meetingCode } = useParams();
   const [micOn, setMic] = useState(true);
   const [cameraOn, setCamera] = useState(true);
   const { localMicrophoneTrack } = useLocalMicrophoneTrack(micOn);
   const { localCameraTrack } = useLocalCameraTrack(cameraOn);
+  // const navigate = useNavigate();
+
+  console.log("step", step);
+  console.log("channel", channel);
 
   const appId = "904e5c9136c84a9183bb8d856aabaafb";
   const token =
     "007eJxTYPA22LRgw7pYE6eVjBtWf5wj7nEpke+bUHPIy6PNae5uXb8UGCwNTFJNky0Njc2SLUwSLQ0tjJOSLFIsTM0SE5MSE9OSMnqz0hsCGRnEKhtYGBkgEMTnYSguKcpMSa3SLUktLmFgAABTkiKa";
 
-  useEffect(() => {
-    if (meetingCode) {
-      setChannel(meetingCode);
-    }
-  }, []);
-
   useJoin(
-    { appid: appId, channel: channel, token: token ? token : null },
-    calling
+    {
+      appid: appId,
+      channel: channel,
+      token: token || null,
+    },
+    true
   );
+
   usePublish([localMicrophoneTrack, localCameraTrack]);
 
   return (
     <div className="w-full h-screen m-20">
       <p className="text-red-600 text-2xl">Agora Video Conferencing POC</p>
-      {isConnected ? (
+      {step === 2 && (
         <div className="flex gap-x-2 justify-center items-center">
           <div className="user-list">
             <div className="user">
@@ -57,7 +57,6 @@ export const PrepRoom = () => {
               </LocalUser>
             </div>
           </div>
-
           <div>
             <p className="font-semibold">Hello {username}</p>
             <div className="join-room flex flex-col gap-y-4">
@@ -72,38 +71,30 @@ export const PrepRoom = () => {
                   !appId || !channel ? "disabled" : "bg-blue-500 text-white"
                 }`}
                 disabled={!appId || !channel}
-                onClick={() => setCalling(true)}
+                onClick={() => setStep(3)}
               >
                 Join
               </button>
             </div>
           </div>
 
-          {isConnected && (
-        <div className="control">
-          <div className="left-control">
-            <button className="btn" onClick={() => setMic((a) => !a)}>
-              Mic
-            </button>
-            <button className="btn" onClick={() => setCamera((a) => !a)}>
-              Cam
+          <div className="control">
+            <div className="left-control">
+              <button className="btn" onClick={() => setMic((a) => !a)}>
+                Mic
+              </button>
+              <button className="btn" onClick={() => setCamera((a) => !a)}>
+                Cam
+              </button>
+            </div>
+            <button
+              className={`btn btn-phone ${ "btn-phone-active" }`}
+              onClick={() => setStep(1)}
+            >
+              End
             </button>
           </div>
-          <button
-            className={`btn btn-phone ${calling ? "btn-phone-active" : ""}`}
-            onClick={() => setCalling((a) => !a)}
-          >
-            {calling ? (
-              <i className="i-phone-hangup" />
-            ) : (
-              <i className="i-mdi-phone" />
-            )}
-          </button>
         </div>
-      )}
-        </div>
-      ) : (
-        <p>Not connected</p>
       )}
     </div>
   );

@@ -1,25 +1,30 @@
 import {
   LocalUser,
   RemoteUser,
-  useIsConnected,
   useJoin,
   useLocalMicrophoneTrack,
   useLocalCameraTrack,
   usePublish,
   useRemoteUsers,
+  useIsConnected,
 } from "agora-rtc-react";
 import { useState } from "react";
 
 import "../styles.css";
+import { PrepRoomProp } from "./Home";
 
-export const Basics = () => {
-  const [calling, setCalling] = useState(false);
+export const Basics = ({step, channel}: PrepRoomProp) => {
+  const [calling, setCalling] = useState(true);
   const isConnected = useIsConnected();
-  const [channel, setChannel] = useState("");
   const token =
     "007eJxTYPA22LRgw7pYE6eVjBtWf5wj7nEpke+bUHPIy6PNae5uXb8UGCwNTFJNky0Njc2SLUwSLQ0tjJOSLFIsTM0SE5MSE9OSMnqz0hsCGRnEKhtYGBkgEMTnYSguKcpMSa3SLUktLmFgAABTkiKa";
 
   const appId = "904e5c9136c84a9183bb8d856aabaafb";
+
+  console.log('step', step);
+  console.log('channel', channel);
+  console.log('is connected', isConnected);
+
 
   useJoin(
     { appid: appId, channel: channel, token: token ? token : null },
@@ -39,7 +44,7 @@ export const Basics = () => {
     <>
       <div className="room h-screen m-20">
         <p className="text-red-600 text-2xl">Agora Video Conferencing POC</p>
-        {isConnected ? (
+        {isConnected && step === 3  && (
           <div className="user-list">
             <div className="user">
               <LocalUser
@@ -62,25 +67,6 @@ export const Basics = () => {
                 </RemoteUser>
               </div>
             ))}
-          </div>
-        ) : (
-          <div className="join-room flex flex-col gap-y-4">
-            <label className="font-semibold">Enter Channel Name</label>
-            <input
-              onChange={(e) => setChannel(e.target.value)}
-              placeholder="Enter Channel Name"
-              value={channel}
-              className="h-14 border pl-2"
-            />
-            <button
-              className={`join-channel ${
-                !appId || !channel ? "disabled" : "bg-blue-500 text-white"
-              }`}
-              disabled={!appId || !channel}
-              onClick={() => setCalling(true)}
-            >
-              Join Channel
-            </button>
           </div>
         )}
       </div>
