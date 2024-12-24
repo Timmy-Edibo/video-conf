@@ -16,9 +16,8 @@ export const Basics = () => {
   const [calling, setCalling] = useState(false);
   const isConnected = useIsConnected();
   const [channel, setChannel] = useState("");
-  const [token, setToken] = useState(
-    "007eJxTYPA22LRgw7pYE6eVjBtWf5wj7nEpke+bUHPIy6PNae5uXb8UGCwNTFJNky0Njc2SLUwSLQ0tjJOSLFIsTM0SE5MSE9OSMnqz0hsCGRnEKhtYGBkgEMTnYSguKcpMSa3SLUktLmFgAABTkiKa"
-  );
+  const token =
+    "007eJxTYPA22LRgw7pYE6eVjBtWf5wj7nEpke+bUHPIy6PNae5uXb8UGCwNTFJNky0Njc2SLUwSLQ0tjJOSLFIsTM0SE5MSE9OSMnqz0hsCGRnEKhtYGBkgEMTnYSguKcpMSa3SLUktLmFgAABTkiKa";
 
   const appId = "904e5c9136c84a9183bb8d856aabaafb";
 
