@@ -80,15 +80,15 @@ export const PrepRoom = ({ channel, step, setStep }: PrepRoomProp) => {
 
           <div className="control">
             <div className="left-control">
-              <button className="btn" onClick={() => setMic((a) => !a)}>
+              <button className="w-20 h-15 text-black" onClick={() => setMic((a) => !a)}>
                 Mic
               </button>
-              <button className="btn" onClick={() => setCamera((a) => !a)}>
+              <button className="w-20 h-15 text-black" onClick={() => setCamera((a) => !a)}>
                 Cam
               </button>
             </div>
             <button
-              className={`btn btn-phone ${ "btn-phone-active" }`}
+              className={`btn btn-phone ${"btn-phone-active"}`}
               onClick={() => setStep(1)}
             >
               End

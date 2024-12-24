@@ -13,7 +13,7 @@ import { useState } from "react";
 import "../styles.css";
 import { PrepRoomProp } from "./Home";
 
-export const Basics = ({step, channel}: PrepRoomProp) => {
+export const Basics = ({ step, channel }: PrepRoomProp) => {
   const [calling, setCalling] = useState(true);
   const isConnected = useIsConnected();
   const token =
@@ -21,10 +21,9 @@ export const Basics = ({step, channel}: PrepRoomProp) => {
 
   const appId = "904e5c9136c84a9183bb8d856aabaafb";
 
-  console.log('step', step);
-  console.log('channel', channel);
-  console.log('is connected', isConnected);
-
+  console.log("step", step);
+  console.log("channel", channel);
+  console.log("is connected", isConnected);
 
   useJoin(
     { appid: appId, channel: channel, token: token ? token : null },
@@ -40,11 +39,13 @@ export const Basics = ({step, channel}: PrepRoomProp) => {
   // Remote users
   const remoteUsers = useRemoteUsers();
 
+  console.log("remote users", remoteUsers);
+
   return (
     <>
       <div className="room h-screen m-20">
         <p className="text-red-600 text-2xl">Agora Video Conferencing POC</p>
-        {isConnected && step === 3  && (
+        {isConnected && step === 3 && (
           <div className="user-list">
             <div className="user">
               <LocalUser
@@ -73,10 +74,10 @@ export const Basics = ({step, channel}: PrepRoomProp) => {
       {isConnected && (
         <div className="control">
           <div className="left-control">
-            <button className="btn" onClick={() => setMic((a) => !a)}>
+            <button className="w-20 h-15 text-black" onClick={() => setMic((a) => !a)}>
               Mic
             </button>
-            <button className="btn" onClick={() => setCamera((a) => !a)}>
+            <button className="w-20 h-15 text-black" onClick={() => setCamera((a) => !a)}>
               Cam
             </button>
           </div>
