@@ -1,10 +1,10 @@
 import './index.css';
-import Home from './component/Home';
+import NewHome from './component/NewHome';
 
 function App() {
   return (
     <div>
-      <Home/>
+      <NewHome/>
     </div>
   );
 }
