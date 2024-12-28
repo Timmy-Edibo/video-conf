@@ -4,10 +4,11 @@ import AgoraRTM from "agora-rtm-sdk";
 import "../styles.css";
 import { useParams } from "react-router";
 
-const appId = "904e5c9136c84a9183bb8d856aabaafb";
-const token =
-  "007eJxTYDj6k6liPY/E2u15HM/jV9atMRJOCoh5H29j8Tm3YQVvCr8Cg6WBSappsqWhsVmyhUmipaGFcVKSRYqFqVliYlJiYlpSY2JeekMgI8N3bgVGRgYIBPFZGEpSi0sYGADVux3F";
-
+const appId = "a073ff90d2c64445a9887314e1c66810";
+const rtcToken = null;
+// const rtcToken =
+//   "007eJxTYPA1qdu464//A65pHKImi8r4L/hYTPA8eGTeCn3l2Q9CSxoUGCwNTFJNky0Njc2SLUwSLQ0tjJOSLFIsTM0SE5MSE9OSbM7mpzcEMjIk3ZzJxMgAgSA+C0NJanEJAwMACwkfQA==";
+const rtmToken = undefined;
 // interface IAgoraRTCExt extends IAgoraRTC {
 //   setParameters: () => void;
 // }
@@ -52,7 +53,7 @@ const App: React.FC = () => {
     const rtmInstance = AgoraRTM.createInstance(appId);
     await rtmInstance.login({
       uid: rtmUid,
-      token: token,
+      token: rtmToken,
     });
 
     const rtmChannel = rtmInstance.createChannel(roomId!);
@@ -80,7 +81,7 @@ const App: React.FC = () => {
     rtcInstance.on("user-published", handleUserPublished);
     rtcInstance.on("user-left", handleUserLeft);
 
-    await rtcInstance.join(appId, roomId!, token, rtcUid);
+    await rtcInstance.join(appId, roomId!, rtcToken, rtcUid);
     const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
     audioTrack.setMuted(micMuted);
 
@@ -240,7 +241,7 @@ const App: React.FC = () => {
           placeholder="Enter Room Name"
         />
         <input name="displayname" placeholder="Enter Display Name" />
-        <button type="submit">Join Room</button>
+        <button className="bg-blue-500" type="submit">Join Room</button>
       </form>
       <div id="room-header" style={{ display: "none" }}>
         <span id="room-name">{roomId}</span>
@@ -248,11 +249,11 @@ const App: React.FC = () => {
       </div>
       <div id="members"></div>
       <div>
-        <button id="mic-icon" onClick={toggleMic}>
+        <button className="bg-blue-500" id="mic-icon" onClick={toggleMic}>
           {micMuted ? "Unmute Mic" : "Mute Mic"}
         </button>
       </div>
-      <div className="avatar-selection">{/* Render Avatar Options Here */}</div>
+      {/* <div className="avatar-selection">Render Avatar Options Here</div> */}
     </div>
   );
 };
