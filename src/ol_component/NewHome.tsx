@@ -9,9 +9,7 @@ const rtcToken = null;
 // const rtcToken =
 //   "007eJxTYPA1qdu464//A65pHKImi8r4L/hYTPA8eGTeCn3l2Q9CSxoUGCwNTFJNky0Njc2SLUwSLQ0tjJOSLFIsTM0SE5MSE9OSbM7mpzcEMjIk3ZzJxMgAgSA+C0NJanEJAwMACwkfQA==";
 const rtmToken = undefined;
-// interface IAgoraRTCExt extends IAgoraRTC {
-//   setParameters: () => void;
-// }
+
 
 interface Member {
   id: string;

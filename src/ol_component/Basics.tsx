@@ -11,7 +11,7 @@ import {
 import { useState } from "react";
 
 import "../styles.css";
-import { PrepRoomProp } from "./Home";
+import { PrepRoomProp } from "../component/Home";
 
 export const Basics = ({ step, channel }: PrepRoomProp) => {
   const [calling, setCalling] = useState(true);

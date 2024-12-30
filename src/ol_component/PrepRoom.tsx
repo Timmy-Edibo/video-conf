@@ -7,7 +7,7 @@ import {
 } from "agora-rtc-react";
 import { useState } from "react";
 import "../styles.css";
-import { PrepRoomProp } from "./Home";
+import { PrepRoomProp } from "../component/Home";
 // import { useNavigate } from "react-router";
 
 export const PrepRoom = ({ channel, step, setStep }: PrepRoomProp) => {
