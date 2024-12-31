@@ -14,7 +14,6 @@ import { UID } from "agora-rtc-react";
 import AgoraRTM, { RtmChannel, RtmClient } from "agora-rtm-sdk";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { agoraGetAppData } from "./utils";
-import { ScreenShare } from "./ScreenShare";
 
 AgoraRTC.onAutoplayFailed = () => {
   alert("Click to start autoplay!");
@@ -64,11 +63,7 @@ export const AgoraKit: React.FC = () => {
   useState(false);
   const [showStepJoinSuccess, setShowStepJoinSuccess] = useState(false);
   const [leaveDisabled, setLeaveDisabled] = useState(true);
-  const [mirrorCheckDisabled, setMirrorCheckDisabled] = useState(true);
-  const [mirrorChecked, setMirrorChecked] = useState(true);
   const [remoteUsers, setRemoteUsers] = useState<Record<string, any>>({});
-  const [audioChecked, setAudioChecked] = useState(true);
-  const [videoChecked, setVideoChecked] = useState(true);
   const [joinRoom, setJoinRoom] = useState(false);
   const [stage, setStage] = useState("prepRoom");
   const remoteUsersRef = useRef(remoteUsers);
@@ -111,7 +106,7 @@ export const AgoraKit: React.FC = () => {
       fetchAgoraData();
       setJoinDisabled(false);
     }
-  }, []);
+  }, [ chan, username]);
 
   const initRtm = async (name: string) => {
     rtmClient = AgoraRTM.createInstance(options.appid!);
@@ -148,7 +143,7 @@ export const AgoraKit: React.FC = () => {
     setRemoteUsers(updatedUsers);
   };
 
-  let leaveRtmChannel = async () => {
+  const leaveRtmChannel = async () => {
     await rtmChannel.leave();
     await rtmClient.logout();
     (rtmChannel as any) = null;
@@ -166,15 +161,6 @@ export const AgoraKit: React.FC = () => {
           // "userAvatar",
         ]);
 
-      // let newMember = `
-      // <div class="speaker user-rtc-${userRtcUid}" id="${members[i]}">
-      //     <img class="user-avatar avatar-${userRtcUid}" src="${userAvatar}"/>
-      //     <p>${name}</p>
-      // </div>`;
-
-      // document
-      //   .getElementById("members")
-      //   .insertAdjacentHTML("beforeend", newMember);
       console.log("rtm clients........", name, userRtcUid, userAvatar);
     }
   };
@@ -185,22 +171,8 @@ export const AgoraKit: React.FC = () => {
 
   const handleMemberJoined = async (MemberId: string) => {
     const { name, userRtcUid, userAvatar } =
-      await rtmClient.getUserAttributesByKeys(MemberId, [
-        "name",
-        "userRtcUid",
-        // "userAvatar",
-      ]);
-
-    // let newMember = `
-    // <div class="speaker user-rtc-${userRtcUid}" id="${MemberId}">
-    //   <img class="user-avatar avatar-${userRtcUid}" src="${userAvatar}"/>
-    //     <p>${name}</p>
-    // </div>`;
-
-    // document
-    //   .getElementById("members")
-    //   .insertAdjacentHTML("beforeend", newMember);
-    console.log("rtm clients........", name, userRtcUid, userAvatar);
+      await rtmClient.getUserAttributesByKeys(MemberId, ["name", "userRtcUid"]);
+    console.log("REMOTE CLIENT JOINED.......", name, userRtcUid, userAvatar);
   };
 
   const handleShareScreen = async () => {
@@ -208,9 +180,6 @@ export const AgoraKit: React.FC = () => {
       if (localUserTrack?.videoTrack?.isPlaying) {
         alert("stopping video sharing");
         await localUserTrack.videoTrack.setEnabled(false);
-        // add global context for setting mute button for video and audio
-        // message.info("Screen sharing paused.");
-        // setPauseScreenShare(true);
       }
 
       // Create the screen video and audio tracks
@@ -338,7 +307,6 @@ export const AgoraKit: React.FC = () => {
       message.success("Join channel success!");
       setJoinDisabled(true);
       setLeaveDisabled(false);
-      setMirrorCheckDisabled(false);
       stepPublish();
     } catch (error: any) {
       message.error(error.message || "An error occurred");
@@ -349,7 +317,6 @@ export const AgoraKit: React.FC = () => {
   const stepPublish = async () => {
     await createTrackAndPublish();
     message.success("Create tracks and publish success!");
-    setMirrorCheckDisabled(true);
   };
 
   const stepLeave = async () => {
@@ -358,45 +325,8 @@ export const AgoraKit: React.FC = () => {
     removeAllIconss();
     setJoinDisabled(true);
     setLeaveDisabled(true);
-    setMirrorCheckDisabled(true);
     navigate("/");
   };
-
-  // const setMute = async (type: "audio" | "video", state: boolean) => {
-  //   try {
-  //     if (type === "audio") {
-  //       await localUserTrack?.audioTrack?.setMuted(state);
-  //     } else if (type === "video") {
-  //       await localUserTrack?.videoTrack?.setMuted(state);
-  //     } else {
-  //       throw new Error("Invalid track type or track does not support muting");
-  //     }
-  //   } catch (err: any) {
-  //     console.error(err);
-  //     message.error(
-  //       err.message || "An error occurred while setting mute state"
-  //     );
-  //   }
-  // };
-
-  // const setMuteByAdmin = async (
-  //   type: "audio" | "video",
-  //   state: boolean,
-  //   userMediaTrack: ILocalAudioTrack | ILocalVideoTrack
-  // ) => {
-  //   try {
-  //     if ((type === "audio" || "video") && "setMuted" in userMediaTrack) {
-  //       await userMediaTrack.setMuted(state);
-  //     } else {
-  //       throw new Error("Invalid track type or track does not support muting");
-  //     }
-  //   } catch (err: any) {
-  //     console.error(err);
-  //     message.error(
-  //       err.message || "An error occurred while setting mute state"
-  //     );
-  //   }
-  // };
 
   const join = async () => {
     rtcClient = AgoraRTC.createClient({
@@ -445,8 +375,6 @@ export const AgoraKit: React.FC = () => {
       delete updatedUsers[uid];
       remoteUsersRef.current = updatedUsers;
       setRemoteUsers(updatedUsers);
-
-      const remainingUids = Object.keys(updatedUsers);
     }
   };
 
@@ -471,11 +399,6 @@ export const AgoraKit: React.FC = () => {
     setRemoteUsers(updatedUsers);
   };
 
-  const updatePermissions = (role: string) => {
-    setOptions((prev) => ({ ...prev, role: role }));
-    console.log("options updated", options);
-  };
-
   const leave = async () => {
     if (localUserTrack) {
       console.log("yes they is local user and it's beomg removed...");
@@ -496,23 +419,28 @@ export const AgoraKit: React.FC = () => {
 
   const muteRemoteUser = async (uid: string) => {
     const user = remoteUsers && remoteUsers[uid];
-    const {track, mediaType} = user;
+    const { track, mediaType } = user;
     if (user && track) {
       if (mediaType === "audio") {
         // await rtcClient.massUnsubscribe(user);
         track.stop();
       }
     }
-  }
+  };
 
   return (
-    <>
+    <div className="flex flex-col w-full h-full">
       {/* Video Section */}
       <div className="container flex w-full h-full overflow-hidden">
         <>
-          <div className="video-group w-full lg:w-1/2">
+          <div className="flex flex-col video-group w-full lg:w-1/2">
+            {joinRoom && (
+              <div>
+                <h1>Channel name: {options?.channel || ""}</h1>
+              </div>
+            )}
             {/* Local Stream */}
-            {(stage === "prepRoom" || stage === "joinRoom") && (
+            {localUserTrack && (stage === "prepRoom" || stage === "joinRoom") && (
               <section className="border rounded shadow-md mb-4">
                 <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
                   Local Stream
@@ -522,9 +450,6 @@ export const AgoraKit: React.FC = () => {
                     videoTrack={localUserTrack?.videoTrack || null}
                     audioTrack={localUserTrack?.audioTrack || null}
                     uid={options?.uid || ""}
-                    options={{
-                      mirror: mirrorChecked,
-                    }}
                   />
                 </div>
               </section>
@@ -555,7 +480,12 @@ export const AgoraKit: React.FC = () => {
                             // screenTrack={user.screenTrack || undefined}
                             uid={uid}
                           />
-                          <button className="bg-red-400" onClick={() => muteRemoteUser(user.uid)}>Mute remote user</button>
+                          <button
+                            className="bg-red-400"
+                            onClick={() => muteRemoteUser(user.uid)}
+                          >
+                            Mute remote user
+                          </button>
                         </div>
                       </div>
                     </>
@@ -566,172 +496,68 @@ export const AgoraKit: React.FC = () => {
         </>
       </div>
 
-      <div>
-        <button
-          className="h-12 rounded-lg w-auto ml-4 bg-blue-600 text-white"
-          onClick={() => updatePermissions("admin")}
-        >
-          Make Admin
-        </button>
-        <button
-          className="h-12 rounded-lg w-auto ml-4 bg-blue-600 text-white"
-          onClick={() => updatePermissions("audience")}
-        >
-          Make Audience
-        </button>
-        <button
-          className="h-12 rounded-lg w-auto ml-4 bg-blue-600 text-white"
-          onClick={() => handleShareScreen()}
-        >
-          Share Screen
-        </button>
-      </div>
+      {stage === "joinRoom" && (
+        <div>
+          <button
+            className="h-12 rounded-lg w-auto ml-4 bg-blue-600 text-white"
+            onClick={() => handleShareScreen()}
+          >
+            Share Screen
+          </button>
+        </div>
+      )}
 
       {/* Form Section */}
       <div className="col-lg-6">
         <form id="join-form" name="join-form">
-          <div>
-            {/* Channel Input */}
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Channel
-              </label>
-              <input
-                className="block w-full px-4 py-2 text-sm border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 placeholder-gray-400"
-                id="channel"
-                type="text"
-                disabled={true}
-                placeholder="Enter channel name"
-                value={options?.channel}
-                onChange={(e) =>
-                  setOptions((prev) => ({
-                    ...prev,
-                    channel: e.target.value,
-                  }))
-                }
-                required
-              />
-            </div>
-
-            {/* User ID Input */}
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                User ID (optional)
-              </label>
-              <input
-                className="block w-full px-4 py-2 text-sm border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 border-gray-300 placeholder-gray-400"
-                id="uid"
-                type="text"
-                disabled={true}
-                value={options?.uid || ""}
-                onChange={(e) =>
-                  setOptions((prev) => ({
-                    ...prev,
-                    uid: e.target.value,
-                  }))
-                }
-                placeholder="Enter the user ID"
-              />
-            </div>
-          </div>
-
           {/* Steps Section */}
-          <div className="mt-2">
+          <div className="flex flex-col p-4 mt-2 gap-3">
+            {/* Step 3 */}
+            {stage === "prepRoom" && (
+              <div className="flex flex-col step">
+                {/* Microphone */}
+                <label className="form-label mt-2">Microphone</label>
+                {localUserTrack?.audioTrack && (
+                  <MicSelect audioTrack={localUserTrack.audioTrack} />
+                )}
+                {/* Camera */}
+                <label className="form-label mt-2">Camera</label>
+                {localUserTrack?.videoTrack && (
+                  <CamSelect videoTrack={localUserTrack.videoTrack} />
+                )}
+              </div>
+            )}
+
             {/* Step 2 */}
-            <section className="step">
-              <label className="form-label">
-                <span>Step 2</span> Join Channel
-              </label>
+            {stage === "prepRoom" && (
               <button
                 type="button"
                 id="step-join"
-                className="btn btn-primary btn-sm"
+                className="btn btn-primary btn-sm border border-blue-950"
                 disabled={joinDisabled}
                 onClick={stepJoin}
               >
                 Join Channel
                 {showStepJoinSuccess && <SuccessIcon />}
               </button>
-            </section>
-
-            {/* Step 3 */}
-            {stage === "prepRoom" && (
-              <section className="step">
-                <div className="form-check">
-                  <span className="form-check-label">Mirror Mode</span>
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="mirror-check"
-                    checked={mirrorChecked}
-                    disabled={mirrorCheckDisabled}
-                    onChange={(e) => setMirrorChecked(e.target.checked)}
-                  />
-                </div>
-
-                {/* Microphone */}
-                <label className="form-label mt-2">Microphone</label>
-                <MicSelect audioTrack={localUserTrack?.audioTrack!} />
-                {/* Camera */}
-                <label className="form-label mt-2">Camera</label>
-                <CamSelect videoTrack={localUserTrack?.videoTrack!} />
-              </section>
             )}
 
-            {/* Step 4 */}
-            <section className="step">
-              <div className="mt-2 mb-1">
-                <span className="flex items-center space-x-2">
-                  <input
-                    className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                    type="checkbox"
-                    id="audio-check"
-                    checked={audioChecked}
-                    onChange={(e) => setAudioChecked(e.target.checked)}
-                  />
-                  <label
-                    className="text-sm text-gray-700"
-                    htmlFor="audio-check"
-                  >
-                    Audio
-                  </label>
-                </span>
-                <span className="flex items-center space-x-2 mt-1">
-                  <input
-                    className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                    type="checkbox"
-                    id="video-check"
-                    checked={videoChecked}
-                    onChange={(e) => setVideoChecked(e.target.checked)}
-                  />
-                  <label
-                    className="text-sm text-gray-700"
-                    htmlFor="video-check"
-                  >
-                    Video
-                  </label>
-                </span>
+            {stage === "joinRoom" && (
+              <div>
+                <button
+                  type="button"
+                  id="step-leave"
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-red-300 disabled:cursor-not-allowed"
+                  disabled={leaveDisabled}
+                  onClick={stepLeave}
+                >
+                  Leave Channel
+                </button>
               </div>
-            </section>
-
-            {/* Step 5 */}
-            <section className="step">
-              <label className="form-label">
-                <span>Step 5</span> Leave Channel
-              </label>
-              <button
-                type="button"
-                id="step-leave"
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-red-300 disabled:cursor-not-allowed"
-                disabled={leaveDisabled}
-                onClick={stepLeave}
-              >
-                Leave Channel
-              </button>
-            </section>
+            )}
           </div>
         </form>
       </div>
-    </>
+    </div>
   );
 };
