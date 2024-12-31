@@ -6,7 +6,6 @@ import AgoraRTC, {
   IAgoraRTCClient,
   ILocalAudioTrack,
   ICameraVideoTrack,
-  ScreenVideoTrackInitConfig,
   IMicrophoneAudioTrack,
   ILocalVideoTrack,
 } from "agora-rtc-sdk-ng";
@@ -71,6 +70,7 @@ export const AgoraKit: React.FC = () => {
   const [audioChecked, setAudioChecked] = useState(true);
   const [videoChecked, setVideoChecked] = useState(true);
   const [joinRoom, setJoinRoom] = useState(false);
+  const [stage, setStage] = useState("prepRoom");
   const remoteUsersRef = useRef(remoteUsers);
   const [options, setOptions] = useState<Options>({
     channel: "",
@@ -140,32 +140,6 @@ export const AgoraKit: React.FC = () => {
     channel.on("MemberLeft", handleMemberLeft);
   };
 
-  // let initVolumeIndicator = async () => {
-  //   //1
-  //   (AgoraRTC as any).setParameter("AUDIO_VOLUME_INDICATION_INTERVAL", 200);
-  //   client!.enableAudioVolumeIndicator();
-
-  //   //2
-  //   client!.on("volume-indicator", (volumes) => {
-  //     volumes.forEach((volume) => {
-  //       console.log(`UID ${volume.uid} Level ${volume.level}`);
-
-  //       //3
-  //       try {
-  //         // let item = document.getElementsByClassName(`avatar-${volume.uid}`)[0];
-
-  //         // if (volume.level >= 50) {
-  //         //   item.style.borderColor = "#00ff00";
-  //         // } else {
-  //         //   item.style.borderColor = "#fff";
-  //         // }
-  //       } catch (error) {
-  //         console.error(error);
-  //       }
-  //     });
-  //   });
-  // };
-
   const handleUserLeft = async (user: any) => {
     const uid = String(user.uid);
     const updatedUsers = { ...remoteUsersRef.current };
@@ -180,12 +154,12 @@ export const AgoraKit: React.FC = () => {
     (rtmChannel as any) = null;
   };
 
-  let getChannelMembers = async () => {
+  const getChannelMembers = async () => {
     const members = await rtmChannel.getMembers();
 
     for (let i = 0; members.length > i; i++) {
       console.log("showing members...", members);
-      let { name, userRtcUid, userAvatar } =
+      const { name, userRtcUid, userAvatar } =
         await rtmClient!.getUserAttributesByKeys(members[i], [
           "name",
           "userRtcUid",
@@ -205,12 +179,12 @@ export const AgoraKit: React.FC = () => {
     }
   };
 
-  const handleMemberLeft = async (MemberId: string) => {
+  const handleMemberLeft = async () => {
     // document.getElementById(MemberId).remove();
   };
 
-  let handleMemberJoined = async (MemberId: string) => {
-    let { name, userRtcUid, userAvatar } =
+  const handleMemberJoined = async (MemberId: string) => {
+    const { name, userRtcUid, userAvatar } =
       await rtmClient.getUserAttributesByKeys(MemberId, [
         "name",
         "userRtcUid",
@@ -298,14 +272,12 @@ export const AgoraKit: React.FC = () => {
 
   // This function will be called when the user stops screen sharing
   const handleScreenTrackEnd = async () => {
-    // message.info(
-    //   `Screen-share track ended, stop sharing screen ` +
-    //     localTracks.screenVideoTrack.getTrackId()
-    // );
-    localUserTrack?.screenTrack?.screenVideoTrack &&
-      localUserTrack?.screenTrack?.screenVideoTrack.close();
-    localUserTrack?.screenTrack?.screenAudioTrack &&
-      localUserTrack?.screenTrack?.screenAudioTrack.close();
+    if (localUserTrack?.screenTrack?.screenVideoTrack) {
+      localUserTrack.screenTrack.screenVideoTrack.close();
+    }
+    if (localUserTrack?.screenTrack?.screenAudioTrack) {
+      localUserTrack.screenTrack.screenAudioTrack.close();
+    }
 
     alert("Screen sharing has ended.");
     setLocalUserTrack((prev) => ({
@@ -357,6 +329,7 @@ export const AgoraKit: React.FC = () => {
 
       console.log("options finally:", options);
       setJoinRoom(true);
+      setStage("joinRoom");
       await join();
       // initVolumeIndicator();
       setOptions(options);
@@ -389,41 +362,41 @@ export const AgoraKit: React.FC = () => {
     navigate("/");
   };
 
-  const setMute = async (type: "audio" | "video", state: boolean) => {
-    try {
-      if (type === "audio") {
-        await localUserTrack?.audioTrack?.setMuted(state);
-      } else if (type === "video") {
-        await localUserTrack?.videoTrack?.setMuted(state);
-      } else {
-        throw new Error("Invalid track type or track does not support muting");
-      }
-    } catch (err: any) {
-      console.error(err);
-      message.error(
-        err.message || "An error occurred while setting mute state"
-      );
-    }
-  };
+  // const setMute = async (type: "audio" | "video", state: boolean) => {
+  //   try {
+  //     if (type === "audio") {
+  //       await localUserTrack?.audioTrack?.setMuted(state);
+  //     } else if (type === "video") {
+  //       await localUserTrack?.videoTrack?.setMuted(state);
+  //     } else {
+  //       throw new Error("Invalid track type or track does not support muting");
+  //     }
+  //   } catch (err: any) {
+  //     console.error(err);
+  //     message.error(
+  //       err.message || "An error occurred while setting mute state"
+  //     );
+  //   }
+  // };
 
-  const setMuteByAdmin = async (
-    type: "audio" | "video",
-    state: boolean,
-    userMediaTrack: ILocalAudioTrack | ILocalVideoTrack
-  ) => {
-    try {
-      if ((type === "audio" || "video") && "setMuted" in userMediaTrack) {
-        await userMediaTrack.setMuted(state);
-      } else {
-        throw new Error("Invalid track type or track does not support muting");
-      }
-    } catch (err: any) {
-      console.error(err);
-      message.error(
-        err.message || "An error occurred while setting mute state"
-      );
-    }
-  };
+  // const setMuteByAdmin = async (
+  //   type: "audio" | "video",
+  //   state: boolean,
+  //   userMediaTrack: ILocalAudioTrack | ILocalVideoTrack
+  // ) => {
+  //   try {
+  //     if ((type === "audio" || "video") && "setMuted" in userMediaTrack) {
+  //       await userMediaTrack.setMuted(state);
+  //     } else {
+  //       throw new Error("Invalid track type or track does not support muting");
+  //     }
+  //   } catch (err: any) {
+  //     console.error(err);
+  //     message.error(
+  //       err.message || "An error occurred while setting mute state"
+  //     );
+  //   }
+  // };
 
   const join = async () => {
     rtcClient = AgoraRTC.createClient({
@@ -521,6 +494,17 @@ export const AgoraKit: React.FC = () => {
     leaveRtmChannel();
   };
 
+  const muteRemoteUser = async (uid: string) => {
+    const user = remoteUsers && remoteUsers[uid];
+    const {track, mediaType} = user;
+    if (user && track) {
+      if (mediaType === "audio") {
+        // await rtcClient.massUnsubscribe(user);
+        track.stop();
+      }
+    }
+  }
+
   return (
     <>
       {/* Video Section */}
@@ -528,63 +512,56 @@ export const AgoraKit: React.FC = () => {
         <>
           <div className="video-group w-full lg:w-1/2">
             {/* Local Stream */}
-            <section className="border rounded shadow-md mb-4">
-              <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
-                Local Stream
-              </div>
-              <div className="p-4">
-                <StreamPlayer
-                  videoTrack={localUserTrack?.videoTrack || null}
-                  audioTrack={localUserTrack?.audioTrack || null}
-                  uid={options?.uid || ""}
-                  options={{
-                    mirror: mirrorChecked,
-                  }}
-                />
-              </div>
-            </section>
-
-            {/* Remote Stream */}
-            {joinRoom && (
-              <section className="border rounded shadow-md">
+            {(stage === "prepRoom" || stage === "joinRoom") && (
+              <section className="border rounded shadow-md mb-4">
                 <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
-                  Remote Stream
+                  Local Stream
                 </div>
                 <div className="p-4">
-                  <div id="remote-playerlist" className="min-h-[220px] w-full">
-                    {Object.keys(remoteUsers).map((uid) => {
-                      const user = remoteUsers[uid];
-                      console.log("remote user", user);
-                      return (
-                        <StreamPlayer
-                          key={uid}
-                          videoTrack={user.videoTrack || undefined}
-                          audioTrack={user.audioTrack || undefined}
-                          // screenTrack={user.screenTrack || undefined}
-                          uid={uid}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="p-4">
-                  <div id="share-screen" className="min-h-[220px] w-full">
-                    {Object.keys(remoteUsers).map((uid) => {
-                      const user = remoteUsers[uid];
-                      console.log("remote user", user);
-                      return (
-                        <ScreenShare
-                          key={uid}
-                          screenTrack={user.screenTrack || undefined}
-                          uid={uid}
-                        />
-                      );
-                    })}
-                  </div>
+                  <StreamPlayer
+                    videoTrack={localUserTrack?.videoTrack || null}
+                    audioTrack={localUserTrack?.audioTrack || null}
+                    uid={options?.uid || ""}
+                    options={{
+                      mirror: mirrorChecked,
+                    }}
+                  />
                 </div>
               </section>
             )}
+
+            {/* Remote Stream */}
+
+            <section className="border rounded shadow-md">
+              {joinRoom &&
+                remoteUsers &&
+                Object.keys(remoteUsers).map((uid) => {
+                  const user = remoteUsers[uid];
+                  console.log("remote user", user);
+                  return (
+                    <>
+                      <div className="p-4">
+                        <div
+                          id="remote-playerlist"
+                          className="min-h-[220px] w-full"
+                        >
+                          <div className="bg-gray-100 text-gray-700 font-semibold px-2 py-2 border-b">
+                            Remote Stream
+                          </div>
+                          <StreamPlayer
+                            key={uid}
+                            videoTrack={user.videoTrack || undefined}
+                            audioTrack={user.audioTrack || undefined}
+                            // screenTrack={user.screenTrack || undefined}
+                            uid={uid}
+                          />
+                          <button className="bg-red-400" onClick={() => muteRemoteUser(user.uid)}>Mute remote user</button>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })}
+            </section>
           </div>
         </>
       </div>
@@ -678,26 +655,28 @@ export const AgoraKit: React.FC = () => {
             </section>
 
             {/* Step 3 */}
-            <section className="step">
-              <div className="form-check">
-                <span className="form-check-label">Mirror Mode</span>
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  id="mirror-check"
-                  checked={mirrorChecked}
-                  disabled={mirrorCheckDisabled}
-                  onChange={(e) => setMirrorChecked(e.target.checked)}
-                />
-              </div>
+            {stage === "prepRoom" && (
+              <section className="step">
+                <div className="form-check">
+                  <span className="form-check-label">Mirror Mode</span>
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="mirror-check"
+                    checked={mirrorChecked}
+                    disabled={mirrorCheckDisabled}
+                    onChange={(e) => setMirrorChecked(e.target.checked)}
+                  />
+                </div>
 
-              {/* Microphone */}
-              <label className="form-label mt-2">Microphone</label>
-              <MicSelect audioTrack={localUserTrack?.audioTrack!} />
-              {/* Camera */}
-              <label className="form-label mt-2">Camera</label>
-              <CamSelect videoTrack={localUserTrack?.videoTrack!} />
-            </section>
+                {/* Microphone */}
+                <label className="form-label mt-2">Microphone</label>
+                <MicSelect audioTrack={localUserTrack?.audioTrack!} />
+                {/* Camera */}
+                <label className="form-label mt-2">Camera</label>
+                <CamSelect videoTrack={localUserTrack?.videoTrack!} />
+              </section>
+            )}
 
             {/* Step 4 */}
             <section className="step">
