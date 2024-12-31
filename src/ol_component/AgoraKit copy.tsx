@@ -736,185 +736,185 @@ export const AgoraKit: React.FC = () => {
   );
 };
 
-async function RTMJoin() {
-  // Create Agora RTM client
-  const clientRTM = AgoraRTM.createInstance($("#appid").val(), {
-    enableLogUpload: false,
-  });
-  var accountName = $("#accountName").val();
-  // Login
-  clientRTM
-    .login({
-      uid: accountName,
-    })
-    .then(() => {
-      console.log("AgoraRTM client login success. Username: " + accountName);
-      isLoggedIn = true;
-      // RTM Channel Join
-      var channelName = $("#channel").val();
-      channel = clientRTM.createChannel(channelName);
-      channel
-        .join()
-        .then(() => {
-          console.log("AgoraRTM client channel join success.");
-          // Get all members in RTM Channel
-          channel.getMembers().then((memberNames) => {
-            console.log("------------------------------");
-            console.log("All members in the channel are as follows: ");
-            console.log(memberNames);
-            var newHTML = $.map(memberNames, function (singleMember) {
-              if (singleMember != accountName) {
-                return `<li class="mt-2">
-                <div class="row">
-                    <p>${singleMember}</p>
-                 </div>
-                 <div class="mb-4">
-                   <button class="text-white btn btn-control mx-3 remoteMicrophone micOn" id="remoteAudio-${singleMember}">Toggle Mic</button>
-                   <button class="text-white btn btn-control remoteCamera camOn" id="remoteVideo-${singleMember}">Toggle Video</button>
-                  </div>
-               </li>`;
-              }
-            });
-            $("#insert-all-users").html(newHTML.join(""));
-          });
-          // Send peer-to-peer message for audio muting and unmuting
-          $(document).on("click", ".remoteMicrophone", function () {
-            fullDivId = $(this).attr("id");
-            peerId = fullDivId.substring(fullDivId.indexOf("-") + 1);
-            console.log("Remote microphone button pressed.");
-            let peerMessage = "audio";
-            clientRTM
-              .sendMessageToPeer(
-                {
-                  text: peerMessage,
-                },
-                peerId
-              )
-              .then((sendResult) => {
-                if (sendResult.hasPeerReceived) {
-                  console.log(
-                    "Message has been received by: " +
-                      peerId +
-                      " Message: " +
-                      peerMessage
-                  );
-                } else {
-                  console.log(
-                    "Message sent to: " + peerId + " Message: " + peerMessage
-                  );
-                }
-              });
-          });
-          // Send peer-to-peer message for video muting and unmuting
-          $(document).on("click", ".remoteCamera", function () {
-            fullDivId = $(this).attr("id");
-            peerId = fullDivId.substring(fullDivId.indexOf("-") + 1);
-            console.log("Remote video button pressed.");
-            let peerMessage = "video";
-            clientRTM
-              .sendMessageToPeer(
-                {
-                  text: peerMessage,
-                },
-                peerId
-              )
-              .then((sendResult) => {
-                if (sendResult.hasPeerReceived) {
-                  console.log(
-                    "Message has been received by: " +
-                      peerId +
-                      " Message: " +
-                      peerMessage
-                  );
-                } else {
-                  console.log(
-                    "Message sent to: " + peerId + " Message: " + peerMessage
-                  );
-                }
-              });
-          });
-          // Display messages from peer
-          clientRTM.on("MessageFromPeer", function ({ text }, peerId) {
-            console.log(peerId + " muted/unmuted your " + text);
-            if (text == "audio") {
-              console.log("Remote video toggle reached with " + peerId);
-              if ($("#remoteAudio-" + peerId).hasClass("micOn")) {
-                localTracks.audioTrack.setEnabled(false);
-                console.log("Remote Audio Muted for: " + peerId);
-                $("#remoteAudio-" + peerId).removeClass("micOn");
-              } else {
-                localTracks.audioTrack.setEnabled(true);
-                console.log("Remote Audio Unmuted for: " + peerId);
-                $("#remoteAudio-" + peerId).addClass("micOn");
-              }
-            } else if (text == "video") {
-              console.log("Remote video toggle reached with " + peerId);
-              if ($("#remoteVideo-" + peerId).hasClass("camOn")) {
-                localTracks.videoTrack.setEnabled(false);
-                console.log("Remote Video Muted for: " + peerId);
-                $("#remoteVideo-" + peerId).removeClass("camOn");
-              } else {
-                localTracks.videoTrack.setEnabled(true);
-                console.log("Remote Video Unmuted for: " + peerId);
-                $("#remoteVideo-" + peerId).addClass("camOn");
-              }
-            }
-          });
-          // Display channel member joined updated users
-          channel.on("MemberJoined", function () {
-            // Get all members in RTM Channel
-            channel.getMembers().then((memberNames) => {
-              console.log("New member joined so updated list is: ");
-              console.log(memberNames);
-              var newHTML = $.map(memberNames, function (singleMember) {
-                if (singleMember != accountName) {
-                  return `<li class="mt-2">
-                    <div class="row">
-                        <p>${singleMember}</p>
-                     </div>
-                     <div class="mb-4">
-                       <button class="text-white btn btn-control mx-3 remoteMicrophone micOn" id="remoteAudio-${singleMember}">Toggle Mic</button>
-                       <button class="text-white btn btn-control remoteCamera camOn" id="remoteVideo-${singleMember}">Toggle Video</button>
-                      </div>
-                   </li>`;
-                }
-              });
-              $("#insert-all-users").html(newHTML.join(""));
-            });
-          });
-          // Display channel member left updated users
-          channel.on("MemberLeft", function () {
-            // Get all members in RTM Channel
-            channel.getMembers().then((memberNames) => {
-              console.log("A member left so updated list is: ");
-              console.log(memberNames);
-              var newHTML = $.map(memberNames, function (singleMember) {
-                if (singleMember != accountName) {
-                  return `<li class="mt-2">
-                    <div class="row">
-                        <p>${singleMember}</p>
-                     </div>
-                     <div class="mb-4">
-                       <button class="text-white btn btn-control mx-3 remoteMicrophone micOn" id="remoteAudio-${singleMember}">Toggle Mic</button>
-                       <button class="text-white btn btn-control remoteCamera camOn" id="remoteVideo-${singleMember}">Toggle Video</button>
-                      </div>
-                   </li>`;
-                }
-              });
-              $("#insert-all-users").html(newHTML.join(""));
-            });
-          });
-        })
-        .catch((error) => {
-          console.log("AgoraRTM client channel join failed: ", error);
-        })
-        .catch((err) => {
-          console.log("AgoraRTM client login failure: ", err);
-        });
-    });
-  // Logout
-  document.getElementById("leave").onclick = async function () {
-    console.log("Client logged out of RTM.");
-    await clientRTM.logout();
-  };
-}
+// async function RTMJoin() {
+//   // Create Agora RTM client
+//   const clientRTM = AgoraRTM.createInstance($("#appid").val(), {
+//     enableLogUpload: false,
+//   });
+//   var accountName = $("#accountName").val();
+//   // Login
+//   clientRTM
+//     .login({
+//       uid: accountName,
+//     })
+//     .then(() => {
+//       console.log("AgoraRTM client login success. Username: " + accountName);
+//       isLoggedIn = true;
+//       // RTM Channel Join
+//       var channelName = $("#channel").val();
+//       channel = clientRTM.createChannel(channelName);
+//       channel
+//         .join()
+//         .then(() => {
+//           console.log("AgoraRTM client channel join success.");
+//           // Get all members in RTM Channel
+//           channel.getMembers().then((memberNames) => {
+//             console.log("------------------------------");
+//             console.log("All members in the channel are as follows: ");
+//             console.log(memberNames);
+//             var newHTML = $.map(memberNames, function (singleMember) {
+//               if (singleMember != accountName) {
+//                 return `<li class="mt-2">
+//                 <div class="row">
+//                     <p>${singleMember}</p>
+//                  </div>
+//                  <div class="mb-4">
+//                    <button class="text-white btn btn-control mx-3 remoteMicrophone micOn" id="remoteAudio-${singleMember}">Toggle Mic</button>
+//                    <button class="text-white btn btn-control remoteCamera camOn" id="remoteVideo-${singleMember}">Toggle Video</button>
+//                   </div>
+//                </li>`;
+//               }
+//             });
+//             $("#insert-all-users").html(newHTML.join(""));
+//           });
+//           // Send peer-to-peer message for audio muting and unmuting
+//           $(document).on("click", ".remoteMicrophone", function () {
+//             fullDivId = $(this).attr("id");
+//             peerId = fullDivId.substring(fullDivId.indexOf("-") + 1);
+//             console.log("Remote microphone button pressed.");
+//             let peerMessage = "audio";
+//             clientRTM
+//               .sendMessageToPeer(
+//                 {
+//                   text: peerMessage,
+//                 },
+//                 peerId
+//               )
+//               .then((sendResult) => {
+//                 if (sendResult.hasPeerReceived) {
+//                   console.log(
+//                     "Message has been received by: " +
+//                       peerId +
+//                       " Message: " +
+//                       peerMessage
+//                   );
+//                 } else {
+//                   console.log(
+//                     "Message sent to: " + peerId + " Message: " + peerMessage
+//                   );
+//                 }
+//               });
+//           });
+//           // Send peer-to-peer message for video muting and unmuting
+//           $(document).on("click", ".remoteCamera", function () {
+//             fullDivId = $(this).attr("id");
+//             peerId = fullDivId.substring(fullDivId.indexOf("-") + 1);
+//             console.log("Remote video button pressed.");
+//             let peerMessage = "video";
+//             clientRTM
+//               .sendMessageToPeer(
+//                 {
+//                   text: peerMessage,
+//                 },
+//                 peerId
+//               )
+//               .then((sendResult) => {
+//                 if (sendResult.hasPeerReceived) {
+//                   console.log(
+//                     "Message has been received by: " +
+//                       peerId +
+//                       " Message: " +
+//                       peerMessage
+//                   );
+//                 } else {
+//                   console.log(
+//                     "Message sent to: " + peerId + " Message: " + peerMessage
+//                   );
+//                 }
+//               });
+//           });
+//           // Display messages from peer
+//           clientRTM.on("MessageFromPeer", function ({ text }, peerId) {
+//             console.log(peerId + " muted/unmuted your " + text);
+//             if (text == "audio") {
+//               console.log("Remote video toggle reached with " + peerId);
+//               if ($("#remoteAudio-" + peerId).hasClass("micOn")) {
+//                 localTracks.audioTrack.setEnabled(false);
+//                 console.log("Remote Audio Muted for: " + peerId);
+//                 $("#remoteAudio-" + peerId).removeClass("micOn");
+//               } else {
+//                 localTracks.audioTrack.setEnabled(true);
+//                 console.log("Remote Audio Unmuted for: " + peerId);
+//                 $("#remoteAudio-" + peerId).addClass("micOn");
+//               }
+//             } else if (text == "video") {
+//               console.log("Remote video toggle reached with " + peerId);
+//               if ($("#remoteVideo-" + peerId).hasClass("camOn")) {
+//                 localTracks.videoTrack.setEnabled(false);
+//                 console.log("Remote Video Muted for: " + peerId);
+//                 $("#remoteVideo-" + peerId).removeClass("camOn");
+//               } else {
+//                 localTracks.videoTrack.setEnabled(true);
+//                 console.log("Remote Video Unmuted for: " + peerId);
+//                 $("#remoteVideo-" + peerId).addClass("camOn");
+//               }
+//             }
+//           });
+//           // Display channel member joined updated users
+//           channel.on("MemberJoined", function () {
+//             // Get all members in RTM Channel
+//             channel.getMembers().then((memberNames) => {
+//               console.log("New member joined so updated list is: ");
+//               console.log(memberNames);
+//               var newHTML = $.map(memberNames, function (singleMember) {
+//                 if (singleMember != accountName) {
+//                   return `<li class="mt-2">
+//                     <div class="row">
+//                         <p>${singleMember}</p>
+//                      </div>
+//                      <div class="mb-4">
+//                        <button class="text-white btn btn-control mx-3 remoteMicrophone micOn" id="remoteAudio-${singleMember}">Toggle Mic</button>
+//                        <button class="text-white btn btn-control remoteCamera camOn" id="remoteVideo-${singleMember}">Toggle Video</button>
+//                       </div>
+//                    </li>`;
+//                 }
+//               });
+//               $("#insert-all-users").html(newHTML.join(""));
+//             });
+//           });
+//           // Display channel member left updated users
+//           channel.on("MemberLeft", function () {
+//             // Get all members in RTM Channel
+//             channel.getMembers().then((memberNames) => {
+//               console.log("A member left so updated list is: ");
+//               console.log(memberNames);
+//               var newHTML = $.map(memberNames, function (singleMember) {
+//                 if (singleMember != accountName) {
+//                   return `<li class="mt-2">
+//                     <div class="row">
+//                         <p>${singleMember}</p>
+//                      </div>
+//                      <div class="mb-4">
+//                        <button class="text-white btn btn-control mx-3 remoteMicrophone micOn" id="remoteAudio-${singleMember}">Toggle Mic</button>
+//                        <button class="text-white btn btn-control remoteCamera camOn" id="remoteVideo-${singleMember}">Toggle Video</button>
+//                       </div>
+//                    </li>`;
+//                 }
+//               });
+//               $("#insert-all-users").html(newHTML.join(""));
+//             });
+//           });
+//         })
+//         .catch((error) => {
+//           console.log("AgoraRTM client channel join failed: ", error);
+//         })
+//         .catch((err) => {
+//           console.log("AgoraRTM client login failure: ", err);
+//         });
+//     });
+//   // Logout
+//   document.getElementById("leave").onclick = async function () {
+//     console.log("Client logged out of RTM.");
+//     await clientRTM.logout();
+//   };
+// }

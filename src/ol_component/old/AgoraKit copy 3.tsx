@@ -1,21 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
-import { CamSelect } from "./CamSelect";
-import { MicSelect } from "./MicSelect";
-import { StreamPlayer } from "./StreamPlayer";
+import { CamSelect } from "../../component/CamSelect";
+import { MicSelect } from "../../component/MicSelect";
+import { StreamPlayer } from "../../component/StreamPlayer";
 import AgoraRTC, {
   IAgoraRTCClient,
   ILocalAudioTrack,
   ICameraVideoTrack,
-  ScreenVideoTrackInitConfig,
   IMicrophoneAudioTrack,
   ILocalVideoTrack,
 } from "agora-rtc-sdk-ng";
-import SuccessIcon from "./SuccessIcon";
+import SuccessIcon from "../../component/SuccessIcon";
 import { UID } from "agora-rtc-react";
 import AgoraRTM, { RtmChannel, RtmClient } from "agora-rtm-sdk";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { agoraGetAppData } from "./utils";
-import { ScreenShare } from "./ScreenShare";
+import { agoraGetAppData } from "../../component/utils";
+import { channel } from "diagnostics_channel";
 
 AgoraRTC.onAutoplayFailed = () => {
   alert("Click to start autoplay!");
@@ -536,6 +535,7 @@ export const AgoraKit: React.FC = () => {
                 <StreamPlayer
                   videoTrack={localUserTrack?.videoTrack || null}
                   audioTrack={localUserTrack?.audioTrack || null}
+                  screenTrack={localUserTrack?.screenTrack || null}
                   uid={options?.uid || ""}
                   options={{
                     mirror: mirrorChecked,
@@ -560,22 +560,6 @@ export const AgoraKit: React.FC = () => {
                           key={uid}
                           videoTrack={user.videoTrack || undefined}
                           audioTrack={user.audioTrack || undefined}
-                          // screenTrack={user.screenTrack || undefined}
-                          uid={uid}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="p-4">
-                  <div id="share-screen" className="min-h-[220px] w-full">
-                    {Object.keys(remoteUsers).map((uid) => {
-                      const user = remoteUsers[uid];
-                      console.log("remote user", user);
-                      return (
-                        <ScreenShare
-                          key={uid}
                           screenTrack={user.screenTrack || undefined}
                           uid={uid}
                         />

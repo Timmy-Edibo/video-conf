@@ -5,7 +5,6 @@ import App from "./App.tsx";
 import AgoraRTC, { AgoraRTCProvider } from "agora-rtc-react";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { AgoraKit } from "./component/AgoraKit.tsx";
-// import PrepRoom from "./component/PrepRoom.tsx";
 
 // In video call, set mode to "rtc"
 const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });

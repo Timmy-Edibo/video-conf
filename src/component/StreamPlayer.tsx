@@ -1,17 +1,19 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
 import {
+  ICameraVideoTrack,
   ILocalAudioTrack,
   ILocalVideoTrack,
+  IMicrophoneAudioTrack,
   IRemoteAudioTrack,
   IRemoteVideoTrack,
 } from "agora-rtc-sdk-ng";
 
-interface StreamPlayerProps {
-  audioTrack?: ILocalAudioTrack | IRemoteAudioTrack;
-  videoTrack?: ILocalVideoTrack | IRemoteVideoTrack;
+type StreamPlayerProps = {
+  audioTrack: (ILocalAudioTrack & IMicrophoneAudioTrack) | null;
+  videoTrack: (ICameraVideoTrack & ILocalVideoTrack) | null;
   uid?: string | number;
   options?: object;
-}
+};
 
 export const StreamPlayer: React.FC<StreamPlayerProps> = ({
   audioTrack,
@@ -19,14 +21,14 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({
   uid = "",
   options = {},
 }) => {
-  // Use ref for video element
+  // Refs for video elements
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [isVideoMuted, setIsVideoMuted] = useState(false);
 
+  // Effect for video track
   useLayoutEffect(() => {
     if (videoRef.current !== null && videoTrack) {
-      // Play the video track on the video element
       videoTrack.play(videoRef.current, options);
     }
 
@@ -37,10 +39,12 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({
     };
   }, [videoTrack, options]);
 
+  // Effect for audio track
   useLayoutEffect(() => {
     if (audioTrack) {
       audioTrack.play();
     }
+
     return () => {
       if (audioTrack) {
         audioTrack.stop();
@@ -48,46 +52,44 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({
     };
   }, [audioTrack]);
 
+  // Toggle audio mute
   const toggleAudioMute = async () => {
     if (audioTrack) {
       const isLocalTrack = "setEnabled" in audioTrack;
 
       if (isLocalTrack) {
-        // Local audio track: Enable or disable audio
         const localAudioTrack = audioTrack as ILocalAudioTrack;
         const newState = !isAudioMuted;
         await localAudioTrack.setEnabled(!newState);
         setIsAudioMuted(newState);
       } else {
-        // Remote audio track: Stop or play the audio locally
         const remoteAudioTrack = audioTrack as IRemoteAudioTrack;
         if (isAudioMuted) {
-          remoteAudioTrack.play();
+          remoteAudioTrack.setVolume(100);
         } else {
-          remoteAudioTrack.stop();
+          remoteAudioTrack.setVolume(0);
         }
         setIsAudioMuted(!isAudioMuted);
       }
     }
   };
 
+  // Toggle video mute
   const toggleVideoMute = async () => {
     if (videoTrack) {
       const isLocalTrack = "setEnabled" in videoTrack;
 
       if (isLocalTrack) {
-        // Local track: Enable or disable the video
         const localVideoTrack = videoTrack as ILocalVideoTrack;
         const newState = !isVideoMuted;
-        await localVideoTrack.setEnabled(!newState); // `setEnabled(false)` mutes the track
+        await localVideoTrack.setEnabled(!newState);
         setIsVideoMuted(newState);
       } else {
-        // Remote track: Stop or play the video
         const remoteVideoTrack = videoTrack as IRemoteVideoTrack;
         if (isVideoMuted) {
-          remoteVideoTrack.play(videoRef.current!); // Resume playing
+          remoteVideoTrack.play(videoRef.current!);
         } else {
-          remoteVideoTrack.stop(); // Stop rendering
+          remoteVideoTrack.stop();
         }
         setIsVideoMuted(!isVideoMuted);
       }
@@ -96,13 +98,23 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({
 
   return (
     <div className="player w-full h-full">
-      <video ref={videoRef} autoPlay playsInline width="100%" height="auto" />
-      {uid && (
-        <div className="card-text player-name absolute top-0 right-0 bg-black text-white text-xs p-1">
-          uid: {uid}
-        </div>
+      {/* Conditionally render video element */}
+      {videoTrack ? (
+        <>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            width="100%"
+            height="auto"
+          />
+          User uid: {uid}
+        </>
+      ) : (
+        <p className="text-center text-gray-500">No video available</p>
       )}
 
+      {/* Control buttons */}
       <div className="flex mt-2 space-x-2">
         <button
           className={`px-2 py-1 text-sm rounded ${
@@ -127,38 +139,4 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({
       </div>
     </div>
   );
-
-  // return (
-  //   <div className="relative p-4 border rounded shadow">
-  //     <div ref={videoRef} className="w-full h-48 bg-gray-200"></div>
-  //     {uid && (
-  //       <div className="absolute top-0 right-0 bg-black text-white text-xs px-2 py-1">
-  //         UID: {uid}
-  //       </div>
-  //     )}
-  //     {/* Mute/Unmute Buttons */}
-  //     <div className="flex mt-2 space-x-2">
-  //       <button
-  //         className={`px-2 py-1 text-sm rounded ${
-  //           isAudioMuted
-  //             ? "bg-red-500 hover:bg-red-600"
-  //             : "bg-green-500 hover:bg-green-600"
-  //         } text-white`}
-  //         onClick={toggleAudioMute}
-  //       >
-  //         {isAudioMuted ? "Unmute Audio" : "Mute Audio"}
-  //       </button>
-  //       <button
-  //         className={`px-2 py-1 text-sm rounded ${
-  //           isVideoMuted
-  //             ? "bg-red-500 hover:bg-red-600"
-  //             : "bg-green-500 hover:bg-green-600"
-  //         } text-white`}
-  //         onClick={toggleVideoMute}
-  //       >
-  //         {isVideoMuted ? "Unmute Video" : "Mute Video"}
-  //       </button>
-  //     </div>
-  //   </div>
-  // );
 };
