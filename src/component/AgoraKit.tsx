@@ -52,15 +52,12 @@ export const AgoraKit: React.FC = () => {
   const params = useParams();
   const [searchParams] = useSearchParams();
   const username = searchParams.get("username");
-
+  const navigate = useNavigate();
   const chan = params.meetingCode;
   const [localUserTrack, setLocalUserTrack] = useState<ILocalTrack | undefined>(
     undefined
   );
-  const navigate = useNavigate();
-
   const [joinDisabled, setJoinDisabled] = useState(true);
-  useState(false);
   const [showStepJoinSuccess, setShowStepJoinSuccess] = useState(false);
   const [leaveDisabled, setLeaveDisabled] = useState(true);
   const [remoteUsers, setRemoteUsers] = useState<Record<string, any>>({});
@@ -440,58 +437,61 @@ export const AgoraKit: React.FC = () => {
               </div>
             )}
             {/* Local Stream */}
+            <div className="flex flex-wrap gap-4">
+
             {localUserTrack && (stage === "prepRoom" || stage === "joinRoom") && (
-              <section className="border rounded shadow-md mb-4">
-                <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
-                  Local Stream
-                </div>
-                <div className="p-4">
-                  <StreamPlayer
-                    videoTrack={localUserTrack?.videoTrack || null}
-                    audioTrack={localUserTrack?.audioTrack || null}
-                    uid={options?.uid || ""}
-                  />
-                </div>
+              <section className="border rounded shadow-md mb-4 w-full lg:w-1/2">
+              <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
+                Local Stream
+              </div>
+              <div className="p-4">
+                <StreamPlayer
+                videoTrack={localUserTrack?.videoTrack || null}
+                audioTrack={localUserTrack?.audioTrack || null}
+                uid={options?.uid || ""}
+                />
+              </div>
               </section>
             )}
 
             {/* Remote Stream */}
 
-            <section className="border rounded shadow-md">
+            <section className="border rounded shadow-md w-full lg:w-1/2">
               {joinRoom &&
-                remoteUsers &&
-                Object.keys(remoteUsers).map((uid) => {
-                  const user = remoteUsers[uid];
-                  console.log("remote user", user);
-                  return (
-                    <>
-                      <div className="p-4">
-                        <div
-                          id="remote-playerlist"
-                          className="min-h-[220px] w-full"
-                        >
-                          <div className="bg-gray-100 text-gray-700 font-semibold px-2 py-2 border-b">
-                            Remote Stream
-                          </div>
-                          <StreamPlayer
-                            key={uid}
-                            videoTrack={user.videoTrack || undefined}
-                            audioTrack={user.audioTrack || undefined}
-                            // screenTrack={user.screenTrack || undefined}
-                            uid={uid}
-                          />
-                          <button
-                            className="bg-red-400"
-                            onClick={() => muteRemoteUser(user.uid)}
-                          >
-                            Mute remote user
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  );
-                })}
+              remoteUsers &&
+              Object.keys(remoteUsers).map((uid) => {
+                const user = remoteUsers[uid];
+                console.log("remote user", user);
+                return (
+                <>
+                  <div className="p-4">
+                  <div
+                    id="remote-playerlist"
+                    className="min-h-[220px] w-full"
+                  >
+                    <div className="bg-gray-100 text-gray-700 font-semibold px-2 py-2 border-b">
+                    Remote Stream
+                    </div>
+                    <StreamPlayer
+                    key={uid}
+                    videoTrack={user.videoTrack || undefined}
+                    audioTrack={user.audioTrack || undefined}
+                    // screenTrack={user.screenTrack || undefined}
+                    uid={uid}
+                    />
+                    <button
+                    className="bg-red-400"
+                    onClick={() => muteRemoteUser(user.uid)}
+                    >
+                    Mute remote user
+                    </button>
+                  </div>
+                  </div>
+                </>
+                );
+              })}
             </section>
+            </div>
           </div>
         </>
       </div>
