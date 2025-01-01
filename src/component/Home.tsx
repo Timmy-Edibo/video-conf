@@ -18,23 +18,35 @@ export const Home = () => {
         </button>
         <p className="text-red-600 text-2xl">Agora Video Conferencing POC</p>
 
-        <div className="flex flex-col gap-y-4">
-          <label className="font-semibold">Enter Channel Name</label>
+      <div className="flex flex-col justify-center items-center min-h-screen px-4">
+        <p className="text-red-600 text-2xl text-center mb-6">
+          Agora Video Conferencing POC
+        </p>
+
+        <div className="flex flex-col gap-y-4 w-full max-w-md">
+          <label className="font-semibold text-lg text-gray-700">
+            Enter Channel Name
+          </label>
           <input
             onChange={(e) => setChannel(e.target.value)}
             placeholder="Enter Channel Name"
             value={channel}
-            className="h-14 border pl-2 w-[26rem]"
+            className="h-14 border border-gray-300 pl-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none w-full"
           />
+          <label className="font-semibold text-lg text-gray-700">
+            Enter Username
+          </label>
           <input
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Enter Username"
             value={username}
-            className="h-14 border pl-2 w-[26rem]"
+            className="h-14 border border-gray-300 pl-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none w-full"
           />
           <button
-            className={` ${
-              !channel || !username ? "disabled" : "bg-blue-500 text-white"
+            className={`mt-4 py-3 rounded-md text-lg font-semibold transition-all ${
+              !channel || !username
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-blue-500 text-white hover:bg-blue-600"
             }`}
             disabled={!channel || !username}
             onClick={() =>
