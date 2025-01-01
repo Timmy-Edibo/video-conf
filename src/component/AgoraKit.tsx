@@ -17,7 +17,6 @@ import { agoraGetAppData } from "./utils";
 import { ScreenShare } from "./ScreenShare";
 import { useWebSocket } from "../context/WebSocket";
 
-
 AgoraRTC.onAutoplayFailed = () => {
   alert("Click to start autoplay!");
 };
@@ -118,7 +117,7 @@ export const AgoraKit: React.FC = () => {
       fetchAgoraData();
       setJoinDisabled(false);
     }
-  }, [ chan, username]);
+  }, [chan, username]);
 
   useEffect(() => {
     wsRef.current = ws;
@@ -244,10 +243,6 @@ export const AgoraKit: React.FC = () => {
     //   ...prev,
     //   { uid: MemberId, name, userRtcUid, userAvatar },
     // ]);
-  const handleMemberJoined = async (MemberId: string) => {
-    const { name, userRtcUid, userAvatar } =
-      await rtmClient.getUserAttributesByKeys(MemberId, ["name", "userRtcUid"]);
-    console.log("REMOTE CLIENT JOINED.......", name, userRtcUid, userAvatar);
   };
 
   const handleShareScreen = async () => {
@@ -521,7 +516,7 @@ export const AgoraKit: React.FC = () => {
                     audioTrack={localUserTrack?.audioTrack || null}
                     uid={options?.uid || ""}
                     options={{
-                      mirror: mirrorChecked,
+                      mirror: false,
                     }}
                   />
                 </div>
@@ -604,67 +599,69 @@ export const AgoraKit: React.FC = () => {
                   </div>
                 </div>
               </section>
-          <div className="flex flex-col video-group w-full lg:w-1/2">
-            {joinRoom && (
-              <div>
-                <h1>Channel name: {options?.channel || ""}</h1>
-              </div>
-            )}
-            {/* Local Stream */}
-            <div className="flex flex-wrap gap-4">
 
-            {localUserTrack && (stage === "prepRoom" || stage === "joinRoom") && (
-              <section className="border rounded shadow-md mb-4 w-full lg:w-1/2">
-              <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
-                Local Stream
-              </div>
-              <div className="p-4">
-                <StreamPlayer
-                videoTrack={localUserTrack?.videoTrack || null}
-                audioTrack={localUserTrack?.audioTrack || null}
-                uid={options?.uid || ""}
-                />
-              </div>
-              </section>
-            )}
-
-            {/* Remote Stream */}
-
-            <section className="border rounded shadow-md w-full lg:w-1/2">
-              {joinRoom &&
-              remoteUsers &&
-              Object.keys(remoteUsers).map((uid) => {
-                const user = remoteUsers[uid];
-                console.log("remote user", user);
-                return (
-                <>
-                  <div className="p-4">
-                  <div
-                    id="remote-playerlist"
-                    className="min-h-[220px] w-full"
-                  >
-                    <div className="bg-gray-100 text-gray-700 font-semibold px-2 py-2 border-b">
-                    Remote Stream
-                    </div>
-                    <StreamPlayer
-                    key={uid}
-                    videoTrack={user.videoTrack || undefined}
-                    audioTrack={user.audioTrack || undefined}
-                    // screenTrack={user.screenTrack || undefined}
-                    uid={uid}
-                    />
-                    <button
-                    className="bg-red-400"
-                    onClick={() => muteRemoteUser(user.uid)}
-                    >
-                    Mute remote user
-                    </button>
+              {joinRoom && (
+                <div className="flex flex-col video-group w-full lg:w-1/2">
+                  <div>
+                    <h1>Channel name: {options?.channel || ""}</h1>
                   </div>
-                  </div>
-                </>
-                );
-              })}
-            </section>
+                </div>
+              )}
+              {/* Local Stream */}
+              <div className="flex flex-wrap gap-4">
+                {localUserTrack &&
+                  (stage === "prepRoom" || stage === "joinRoom") && (
+                    <section className="border rounded shadow-md mb-4 w-full lg:w-1/2">
+                      <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
+                        Local Stream
+                      </div>
+                      <div className="p-4">
+                        <StreamPlayer
+                          videoTrack={localUserTrack?.videoTrack || null}
+                          audioTrack={localUserTrack?.audioTrack || null}
+                          uid={options?.uid || ""}
+                        />
+                      </div>
+                    </section>
+                  )}
+
+                {/* Remote Stream */}
+                <section className="border rounded shadow-md w-full lg:w-1/2">
+                  {joinRoom &&
+                    remoteUsers &&
+                    Object.keys(remoteUsers).map((uid) => {
+                      const user = remoteUsers[uid];
+                      console.log("remote user", user);
+                      return (
+                        <>
+                          <div className="p-4">
+                            <div
+                              id="remote-playerlist"
+                              className="min-h-[220px] w-full"
+                            >
+                              <div className="bg-gray-100 text-gray-700 font-semibold px-2 py-2 border-b">
+                                Remote Stream
+                              </div>
+                              <StreamPlayer
+                                key={uid}
+                                videoTrack={user.videoTrack || undefined}
+                                audioTrack={user.audioTrack || undefined}
+                                // screenTrack={user.screenTrack || undefined}
+                                uid={uid}
+                              />
+                              <button
+                                className="bg-red-400"
+                                onClick={() => muteRemoteUser(user.uid)}
+                              >
+                                Mute remote user
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })}
+                </section>
+              </div>
             </div>
           </div>
         </>
