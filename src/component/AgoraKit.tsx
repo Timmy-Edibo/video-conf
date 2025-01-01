@@ -14,6 +14,9 @@ import { UID } from "agora-rtc-react";
 import AgoraRTM, { RtmChannel, RtmClient } from "agora-rtm-sdk";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { agoraGetAppData } from "./utils";
+import { ScreenShare } from "./ScreenShare";
+import { useWebSocket } from "../context/WebSocket";
+
 
 AgoraRTC.onAutoplayFailed = () => {
   alert("Click to start autoplay!");
@@ -52,6 +55,8 @@ export const AgoraKit: React.FC = () => {
   const params = useParams();
   const [searchParams] = useSearchParams();
   const username = searchParams.get("username");
+  const ws = useWebSocket();
+
   const navigate = useNavigate();
   const chan = params.meetingCode;
   const [localUserTrack, setLocalUserTrack] = useState<ILocalTrack | undefined>(
@@ -64,6 +69,16 @@ export const AgoraKit: React.FC = () => {
   const [joinRoom, setJoinRoom] = useState(false);
   const [stage, setStage] = useState("prepRoom");
   const remoteUsersRef = useRef(remoteUsers);
+  const wsRef = useRef<typeof ws | null>(null);
+  const [userProfiles, setUserProfiles] = useState<
+    | {
+        uid: string;
+        name: string;
+        userRtcUid: string;
+        userAvatar: string;
+      }[]
+    | null
+  >(null);
   const [options, setOptions] = useState<Options>({
     channel: "",
     appid: "d9b1d4e54b9e4a01aac1de9833d83752",
@@ -104,6 +119,47 @@ export const AgoraKit: React.FC = () => {
       setJoinDisabled(false);
     }
   }, [ chan, username]);
+
+  useEffect(() => {
+    wsRef.current = ws;
+    try {
+      if (ws) {
+        ws.connect();
+
+        ws.on("auth_error", (error: string) => {
+          console.error("WebSocket authentication error:", error);
+        });
+
+        ws.on("suggested_username_response", (response: any) => {
+          console.log("Suggested usernames from DB:", response);
+        });
+
+        ws.on("connect_error", (error) => {
+          console.error("WebSocket connection error:", error);
+        });
+
+        ws.on("mute-remote-user-microphone", async (result) => {
+          if (result.uid.toString() === options.uid?.toString()) {
+            console.log("handleMuteRemoteUserMicrophone....", result);
+            if (localUserTrack?.audioTrack?.isPlaying) {
+              localUserTrack?.audioTrack!.setEnabled(false);
+            } else if (localUserTrack?.videoTrack?.isPlaying) {
+              await localUserTrack?.videoTrack!.setEnabled(false);
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error("WebSocket error:", error);
+    }
+  }, [ws]);
+
+  const handleMuteRemoteUserMicrophone = (uid: number) => {
+    const userId = remoteUsers[uid];
+    console.log("microphone....", userId.uid);
+    const data = { uid };
+    wsRef?.current?.emit("mute-remote-user-microphone", data);
+  };
 
   const initRtm = async (name: string) => {
     rtmClient = AgoraRTM.createInstance(options.appid!);
@@ -166,6 +222,28 @@ export const AgoraKit: React.FC = () => {
     // document.getElementById(MemberId).remove();
   };
 
+  let handleMemberJoined = async (MemberId: string) => {
+    let { name, userRtcUid, userAvatar } =
+      await rtmClient.getUserAttributesByKeys(MemberId, [
+        "name",
+        "userRtcUid",
+        // "userAvatar",
+      ]);
+
+    // let newMember = `
+    // <div class="speaker user-rtc-${userRtcUid}" id="${MemberId}">
+    //   <img class="user-avatar avatar-${userRtcUid}" src="${userAvatar}"/>
+    //     <p>${name}</p>
+    // </div>`;
+
+    // document
+    //   .getElementById("members")
+    //   .insertAdjacentHTML("beforeend", newMember);
+    console.log("rtm clients........", name, userRtcUid, userAvatar);
+    // setUserProfiles((prev: any) => [
+    //   ...prev,
+    //   { uid: MemberId, name, userRtcUid, userAvatar },
+    // ]);
   const handleMemberJoined = async (MemberId: string) => {
     const { name, userRtcUid, userAvatar } =
       await rtmClient.getUserAttributesByKeys(MemberId, ["name", "userRtcUid"]);
@@ -430,6 +508,102 @@ export const AgoraKit: React.FC = () => {
       {/* Video Section */}
       <div className="container flex w-full h-full overflow-hidden">
         <>
+          <div className="grid grid-cols-2">
+            <div className="video-group w-full lg:w-1/2">
+              {/* Local Stream */}
+              <section className="border rounded shadow-md mb-4">
+                <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
+                  Local Stream
+                </div>
+                <div className="p-4">
+                  <StreamPlayer
+                    videoTrack={localUserTrack?.videoTrack || null}
+                    audioTrack={localUserTrack?.audioTrack || null}
+                    uid={options?.uid || ""}
+                    options={{
+                      mirror: mirrorChecked,
+                    }}
+                  />
+                </div>
+              </section>
+
+              {/* Remote Stream */}
+              {joinRoom && (
+                <section className="border rounded shadow-md">
+                  <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
+                    Remote Stream
+                  </div>
+                  <div className="p-4">
+                    <div
+                      id="remote-playerlist"
+                      className="min-h-[220px] w-full"
+                    >
+                      {Object.keys(remoteUsers).map((uid) => {
+                        const user = remoteUsers[uid];
+                        console.log("remote user", user);
+                        return (
+                          <StreamPlayer
+                            key={uid}
+                            videoTrack={user.videoTrack || undefined}
+                            audioTrack={user.audioTrack || undefined}
+                            // screenTrack={user.screenTrack || undefined}
+                            uid={uid}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="p-4">
+                    <div id="share-screen" className="min-h-[220px] w-full">
+                      {Object.keys(remoteUsers).map((uid) => {
+                        const user = remoteUsers[uid];
+                        console.log("remote user", user);
+                        return (
+                          <ScreenShare
+                            key={uid}
+                            screenTrack={user.screenTrack || undefined}
+                            uid={uid}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                </section>
+              )}
+            </div>
+
+            <div className="video-group w-full lg:w-1/2">
+              {/*  Channel Participants */}
+              <section className="border rounded shadow-md">
+                <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
+                  Channel Participants
+                </div>
+                <div className="p-4">
+                  <div id="remote-playerlist" className="min-h-[220px] w-full">
+                    <p>nknfnfkfknf</p>
+                    {Object.keys(remoteUsers).map((uid) => {
+                      const user = remoteUsers[uid];
+                      console.log("remote user", user);
+                      return (
+                        <div>
+                          <p>
+                            {" "}
+                            User: {user?.name} {uid}
+                          </p>
+                          <button
+                            onClick={() =>
+                              handleMuteRemoteUserMicrophone(parseInt(uid))
+                            }
+                          >
+                            mute
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
           <div className="flex flex-col video-group w-full lg:w-1/2">
             {joinRoom && (
               <div>

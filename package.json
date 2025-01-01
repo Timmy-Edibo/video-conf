@@ -14,12 +14,14 @@
     "agora-rtc-react": "^2.3.0",
     "agora-rtc-sdk-ng": "^4.23.0",
     "agora-rtm-sdk": "^1.5.1",
+    "js-cookie": "^3.0.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router": "^7.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",

@@ -9,6 +9,15 @@ export const Home = () => {
 
   return (
     <>
+      <div className="flex flex-col justify-center items-center">
+        <button
+          className={"bg-blue-500 text-white"}
+          onClick={() => navigate(`/auth/login`)}
+        >
+          Login
+        </button>
+        <p className="text-red-600 text-2xl">Agora Video Conferencing POC</p>
+
       <div className="flex flex-col justify-center items-center min-h-screen px-4">
         <p className="text-red-600 text-2xl text-center mb-6">
           Agora Video Conferencing POC
