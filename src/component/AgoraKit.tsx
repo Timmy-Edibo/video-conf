@@ -504,69 +504,7 @@ export const AgoraKit: React.FC = () => {
       <div className="container flex w-full h-full overflow-hidden">
         <>
           <div className="grid grid-cols-2">
-            <div className="video-group w-full lg:w-1/2">
-              {/* Local Stream */}
-              <section className="border rounded shadow-md mb-4">
-                <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
-                  Local Stream
-                </div>
-                <div className="p-4">
-                  <StreamPlayer
-                    videoTrack={localUserTrack?.videoTrack || null}
-                    audioTrack={localUserTrack?.audioTrack || null}
-                    uid={options?.uid || ""}
-                    options={{
-                      mirror: false,
-                    }}
-                  />
-                </div>
-              </section>
-
-              {/* Remote Stream */}
-              {joinRoom && (
-                <section className="border rounded shadow-md">
-                  <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
-                    Remote Stream
-                  </div>
-                  <div className="p-4">
-                    <div
-                      id="remote-playerlist"
-                      className="min-h-[220px] w-full"
-                    >
-                      {Object.keys(remoteUsers).map((uid) => {
-                        const user = remoteUsers[uid];
-                        console.log("remote user", user);
-                        return (
-                          <StreamPlayer
-                            key={uid}
-                            videoTrack={user.videoTrack || undefined}
-                            audioTrack={user.audioTrack || undefined}
-                            // screenTrack={user.screenTrack || undefined}
-                            uid={uid}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="p-4">
-                    <div id="share-screen" className="min-h-[220px] w-full">
-                      {Object.keys(remoteUsers).map((uid) => {
-                        const user = remoteUsers[uid];
-                        console.log("remote user", user);
-                        return (
-                          <ScreenShare
-                            key={uid}
-                            screenTrack={user.screenTrack || undefined}
-                            uid={uid}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                </section>
-              )}
-            </div>
+            
 
             <div className="video-group w-full lg:w-1/2">
               {/*  Channel Participants */}
@@ -576,7 +514,7 @@ export const AgoraKit: React.FC = () => {
                 </div>
                 <div className="p-4">
                   <div id="remote-playerlist" className="min-h-[220px] w-full">
-                    <p>nknfnfkfknf</p>
+                    <p></p>
                     {Object.keys(remoteUsers).map((uid) => {
                       const user = remoteUsers[uid];
                       console.log("remote user", user);
@@ -649,12 +587,7 @@ export const AgoraKit: React.FC = () => {
                                 // screenTrack={user.screenTrack || undefined}
                                 uid={uid}
                               />
-                              <button
-                                className="bg-red-400"
-                                onClick={() => muteRemoteUser(user.uid)}
-                              >
-                                Mute remote user
-                              </button>
+                              
                             </div>
                           </div>
                         </>

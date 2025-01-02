@@ -1,23 +1,26 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useAuth } from "../context/AuthContext";
 
 export const Home = () => {
   const [channel, setChannel] = useState("");
   const [username, setUsername] = useState("");
+  const { isAuthenticated } = useAuth();
 
   const navigate = useNavigate();
 
   return (
     <>
-      <div className="flex flex-col justify-center items-center">
-        <button
-          className={"bg-blue-500 text-white"}
-          onClick={() => navigate(`/auth/login`)}
-        >
-          Login
-        </button>
-        <p className="text-red-600 text-2xl">Agora Video Conferencing POC</p>
-
+      {!isAuthenticated && (
+        <div className="flex flex-col justify-center items-center">
+          <button
+            className={"bg-blue-500 text-white"}
+            onClick={() => navigate(`/auth/login`)}
+          >
+            Login
+          </button>
+        </div>
+      )}
       <div className="flex flex-col justify-center items-center min-h-screen px-4">
         <p className="text-red-600 text-2xl text-center mb-6">
           Agora Video Conferencing POC

@@ -33,7 +33,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
   useEffect(() => {
     const token = `Bearer ${Cookies.get("accessToken")}`;
-    const socket = io(`http://localhost:8080`, {
+    const socket = io(`http://app.stridez.ca`, {
       autoConnect: true,
       transports: ["websocket", "polling"],
       withCredentials: true,

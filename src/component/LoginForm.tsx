@@ -19,7 +19,7 @@ const LoginForm: React.FC = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8080/api/v1/auth/login",
+        "https://app.stridez.ca/api/v1/auth/login",
         { email, password }
       );
       console.log(response);
