@@ -506,7 +506,16 @@ export const AgoraKit: React.FC = () => {
                 </div>
                 <div className="p-4">
                   <div id="remote-playerlist" className="min-h-[220px] w-full">
-                    <p> Local User: {options?.uid}</p>
+                    <div>
+                      <p> Local User: {options?.uid}</p>{" "}
+                      <button
+                        onClick={() =>
+                          handleMuteRemoteUserMicrophone(parseInt(uid))
+                        }
+                      >
+                        mute
+                      </button>
+                    </div>
                     {Object.keys(remoteUsers).map((uid) => {
                       const user = remoteUsers[uid];
                       console.log("remote user", remoteUsers);
