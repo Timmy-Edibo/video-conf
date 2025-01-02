@@ -124,6 +124,7 @@ export const AgoraKit: React.FC = () => {
     try {
       if (ws) {
         ws.connect();
+        console.log("WebSocket connected successfully.");
 
         ws.on("auth_error", (error: string) => {
           console.error("WebSocket authentication error:", error);

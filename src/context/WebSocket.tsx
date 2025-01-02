@@ -33,7 +33,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
   useEffect(() => {
     const token = `Bearer ${Cookies.get("accessToken")}`;
-    const socket = io(`http://app.stridez.ca`, {
+    const socket = io(`https://app.stridez.ca`, {
       autoConnect: true,
       transports: ["websocket", "polling"],
       withCredentials: true,
@@ -43,14 +43,14 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     });
 
     // Event listeners for connection state
-    socket.on("connect", () => console.log("WebSocket connected"));
+    socket.on("connect", () => console.log("WebSocket connected on STRIDES WS"));
     socket.on("disconnect", () => console.log("WebSocket disconnected"));
 
     setWs(socket);
 
     // Cleanup the WebSocket connection on unmount
     return () => {
-      socket.close();
+      // socket.close();
     };
   }, []);
 
