@@ -58,8 +58,8 @@ export const AgoraKit: React.FC = () => {
 
   const navigate = useNavigate();
   const chan = params.meetingCode;
-  const [localUserTrack, setLocalUserTrack] = useState<ILocalTrack | undefined>(
-    undefined
+  const [localUserTrack, setLocalUserTrack] = useState<ILocalTrack | null>(
+    null
   );
   const [joinDisabled, setJoinDisabled] = useState(true);
   const [showStepJoinSuccess, setShowStepJoinSuccess] = useState(false);
@@ -138,8 +138,8 @@ export const AgoraKit: React.FC = () => {
         });
 
         ws.on("mute-remote-user-microphone", async (result) => {
+          console.log("handleMuteRemoteUserMicrophone....", result);
           if (result.uid.toString() === options.uid?.toString()) {
-            console.log("handleMuteRemoteUserMicrophone....", result);
             if (localUserTrack?.audioTrack?.isPlaying) {
               localUserTrack?.audioTrack!.setEnabled(false);
             } else if (localUserTrack?.videoTrack?.isPlaying) {
@@ -395,6 +395,7 @@ export const AgoraKit: React.FC = () => {
     removeAllIconss();
     setJoinDisabled(true);
     setLeaveDisabled(true);
+
     navigate("/");
   };
 
@@ -472,12 +473,16 @@ export const AgoraKit: React.FC = () => {
   const leave = async () => {
     if (localUserTrack) {
       console.log("yes they is local user and it's beomg removed...");
-      localUserTrack?.audioTrack?.stop();
       localUserTrack.audioTrack?.close();
+      localUserTrack?.audioTrack?.stop();
 
-      localUserTrack.videoTrack?.stop();
       localUserTrack.videoTrack?.close();
-      setLocalUserTrack(undefined);
+      localUserTrack.videoTrack?.stop();
+      setLocalUserTrack({
+        videoTrack: null as any,
+        audioTrack: null as any,
+        screenTrack: null,
+      });
     }
 
     setRemoteUsers({});
@@ -487,25 +492,12 @@ export const AgoraKit: React.FC = () => {
     leaveRtmChannel();
   };
 
-  const muteRemoteUser = async (uid: string) => {
-    const user = remoteUsers && remoteUsers[uid];
-    const { track, mediaType } = user;
-    if (user && track) {
-      if (mediaType === "audio") {
-        // await rtcClient.massUnsubscribe(user);
-        track.stop();
-      }
-    }
-  };
-
   return (
     <div className="flex flex-col w-full h-full">
       {/* Video Section */}
       <div className="container flex w-full h-full overflow-hidden">
         <>
           <div className="grid grid-cols-2">
-            
-
             <div className="video-group w-full lg:w-1/2">
               {/*  Channel Participants */}
               <section className="border rounded shadow-md">
@@ -514,10 +506,10 @@ export const AgoraKit: React.FC = () => {
                 </div>
                 <div className="p-4">
                   <div id="remote-playerlist" className="min-h-[220px] w-full">
-                    <p></p>
+                    <p> Local User: {options?.uid}</p>
                     {Object.keys(remoteUsers).map((uid) => {
                       const user = remoteUsers[uid];
-                      console.log("remote user", user);
+                      console.log("remote user", remoteUsers);
                       return (
                         <div>
                           <p>
@@ -587,7 +579,6 @@ export const AgoraKit: React.FC = () => {
                                 // screenTrack={user.screenTrack || undefined}
                                 uid={uid}
                               />
-                              
                             </div>
                           </div>
                         </>
