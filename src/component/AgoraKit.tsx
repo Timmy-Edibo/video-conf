@@ -510,7 +510,7 @@ export const AgoraKit: React.FC = () => {
                       <p> Local User: {options?.uid}</p>{" "}
                       <button
                         onClick={() =>
-                          handleMuteRemoteUserMicrophone(parseInt(uid))
+                          handleMuteRemoteUserMicrophone(parseInt(options?.uid))
                         }
                       >
                         mute
