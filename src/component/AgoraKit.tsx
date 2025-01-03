@@ -158,7 +158,10 @@ export const AgoraKit: React.FC = () => {
     const userId = remoteUsers[uid];
     console.log("microphone....", userId.uid);
     const data = { uid };
-    wsRef?.current?.emit("mute-remote-user-microphone", data);
+    // wsRef?.current?.emit("mute-remote-user-microphone", data);
+    rtmChannel.sendMessage({
+      text: JSON.stringify({ command: "mute-microphone", uid: uid }),
+    });
   };
 
   const initRtm = async (name: string) => {
@@ -186,6 +189,17 @@ export const AgoraKit: React.FC = () => {
 
     channel.on("MemberJoined", handleMemberJoined);
     channel.on("MemberLeft", handleMemberLeft);
+    channel.on("ChannelMessage", async ({ text }: any) => {
+      console.log("muter is called")
+      const message = JSON.parse(text);
+      if (message.command === "mute-microphone" && options.uid == message.uid) {
+        if (localUserTrack?.audioTrack?.isPlaying) {
+          localUserTrack?.audioTrack!.setEnabled(false);
+        } else if (localUserTrack?.videoTrack?.isPlaying) {
+          await localUserTrack?.videoTrack!.setEnabled(false);
+        }
+      }
+    });
   };
 
   const handleUserLeft = async (user: any) => {
@@ -511,7 +525,9 @@ export const AgoraKit: React.FC = () => {
                       <p> Local User: {options?.uid}</p>{" "}
                       <button
                         onClick={() =>
-                          handleMuteRemoteUserMicrophone(parseInt(`${options?.uid}`))
+                          handleMuteRemoteUserMicrophone(
+                            parseInt(`${options?.uid}`)
+                          )
                         }
                       >
                         mute
