@@ -191,15 +191,25 @@ export const AgoraKit: React.FC = () => {
       const message = JSON.parse(text);
       if (message.command === "mute-microphone" && options.uid == message.uid) {
         console.log("muter is true here ");
-        await localUserTrack?.audioTrack!.setEnabled(false);
-        await localUserTrack?.videoTrack!.setEnabled(false);
+        if (
+          localUserTrack?.audioTrack?.enabled ||
+          localUserTrack?.videoTrack?.enabled
+        ) {
+          await localUserTrack?.audioTrack!.setEnabled(false);
+          await localUserTrack?.videoTrack!.setEnabled(false);
+        }
       } else if (
         message.command === "unmute-microphone" &&
         options.uid == message.uid
       ) {
-        console.log("muter is true here ");
-        await localUserTrack?.audioTrack!.setEnabled(true);
-        await localUserTrack?.videoTrack!.setEnabled(true);
+        if (
+          !localUserTrack?.audioTrack?.enabled ||
+          !localUserTrack?.videoTrack?.enabled
+        ) {
+          console.log("muter is true here ");
+          await localUserTrack?.audioTrack!.setEnabled(true);
+          await localUserTrack?.videoTrack!.setEnabled(true);
+        }
       }
     });
   };
@@ -553,7 +563,7 @@ export const AgoraKit: React.FC = () => {
                               )
                             }
                           >
-                            mute audio
+                            mute audio & video
                           </button>
                           <button
                             onClick={() =>
@@ -563,7 +573,7 @@ export const AgoraKit: React.FC = () => {
                               )
                             }
                           >
-                            mute video
+                            unmute audio & video
                           </button>
                         </div>
                       );
