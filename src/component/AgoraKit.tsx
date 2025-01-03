@@ -154,13 +154,9 @@ export const AgoraKit: React.FC = () => {
     }
   }, [ws]);
 
-  const handleMuteRemoteUserMicrophone = (uid: number) => {
-    const userId = remoteUsers[uid];
-    console.log("microphone....", userId.uid);
-    const data = { uid };
-    // wsRef?.current?.emit("mute-remote-user-microphone", data);
+  const handleMuteRemoteUserMicrophone = (action: string, uid: number) => {
     rtmChannel.sendMessage({
-      text: JSON.stringify({ command: "mute-microphone", uid: uid }),
+      text: JSON.stringify({ command: `${action}-microphone`, uid: uid }),
     });
   };
 
@@ -190,14 +186,16 @@ export const AgoraKit: React.FC = () => {
     channel.on("MemberJoined", handleMemberJoined);
     channel.on("MemberLeft", handleMemberLeft);
     channel.on("ChannelMessage", async ({ text }: any) => {
-      console.log("muter is called")
+      console.log("muter is called");
       const message = JSON.parse(text);
       if (message.command === "mute-microphone" && options.uid == message.uid) {
-        if (localUserTrack?.audioTrack?.isPlaying) {
-          localUserTrack?.audioTrack!.setEnabled(false);
-        } else if (localUserTrack?.videoTrack?.isPlaying) {
-          await localUserTrack?.videoTrack!.setEnabled(false);
-        }
+        console.log("muter is true here ");
+        await localUserTrack?.audioTrack!.setEnabled(false);
+        await localUserTrack?.videoTrack!.setEnabled(false);
+      } else {
+        console.log("muter is true here ");
+        await localUserTrack?.audioTrack!.setEnabled(true);
+        await localUserTrack?.videoTrack!.setEnabled(true);
       }
     });
   };
@@ -526,11 +524,12 @@ export const AgoraKit: React.FC = () => {
                       <button
                         onClick={() =>
                           handleMuteRemoteUserMicrophone(
+                            "mute",
                             parseInt(`${options?.uid}`)
                           )
                         }
                       >
-                        mute
+                        mute audio
                       </button>
                     </div>
                     {Object.keys(remoteUsers).map((uid) => {
@@ -544,10 +543,23 @@ export const AgoraKit: React.FC = () => {
                           </p>
                           <button
                             onClick={() =>
-                              handleMuteRemoteUserMicrophone(parseInt(uid))
+                              handleMuteRemoteUserMicrophone(
+                                "mute",
+                                parseInt(uid)
+                              )
                             }
                           >
-                            mute
+                            mute audio
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleMuteRemoteUserMicrophone(
+                                "unmute",
+                                parseInt(uid)
+                              )
+                            }
+                          >
+                            mute video
                           </button>
                         </div>
                       );
