@@ -89,6 +89,10 @@ export const AgoraKit: React.FC = () => {
     role: "host",
     certificate: "",
   });
+  const [screenTrack, setScreenTrack] = useState<{
+    screenVideoTrack: ILocalVideoTrack | null;
+    screenAudioTrack: ILocalAudioTrack | null;
+  } | null>(null);
 
   useEffect(() => {
     remoteUsersRef.current = remoteUsers;
@@ -119,12 +123,11 @@ export const AgoraKit: React.FC = () => {
     }
   }, [chan, username]);
 
-
   const handleMuteRemoteUserMicrophone = (action: string, uid: number) => {
-    console.log("action", action, `${action}-microphone`),
-      rtmChannel.sendMessage({
-        text: JSON.stringify({ command: `${action}-microphone`, uid: uid }),
-      });
+    console.log("action", action, `${action}-microphone`);
+    rtmChannel.sendMessage({
+      text: JSON.stringify({ command: `${action}-microphone`, uid: uid }),
+    });
   };
 
   const initRtm = async (name: string) => {
@@ -238,98 +241,165 @@ export const AgoraKit: React.FC = () => {
     // ]);
   };
 
+  // const handleShareScreen = async () => {
+  //   try {
+  //     if (localUserTrack?.videoTrack?.isPlaying) {
+  //       alert("stopping video sharing");
+  //       await localUserTrack.videoTrack.setEnabled(false);
+  //     }
+
+  //     // Create the screen video and audio tracks
+  //     const [screenTrack] = await Promise.all([
+  //       AgoraRTC.createScreenVideoTrack(
+  //         {
+  //           encoderConfig: "720p",
+  //         },
+  //         "auto"
+  //       ),
+  //     ]);
+
+  //     // Prepare screen track object
+  //     let screenVideoTrack = null;
+  //     let screenAudioTrack = null;
+
+  //     if (screenTrack instanceof Array) {
+  //       // Array: Separate video and audio tracks
+  //       screenVideoTrack = screenTrack[0];
+  //       screenAudioTrack = screenTrack[1];
+  //     } else {
+  //       // Single track: Only video
+  //       screenVideoTrack = screenTrack;
+  //     }
+
+  //     if (screenVideoTrack) {
+  //       // Bind the "track-ended" event to handle the case where sharing stops
+  //       screenVideoTrack.on("track-ended", handleScreenTrackEnd);
+
+  //       // Update the state with the new screen tracks
+  //       setLocalUserTrack((prev) => ({
+  //         audioTrack:
+  //           prev?.audioTrack ??
+  //           ({} as ILocalAudioTrack & IMicrophoneAudioTrack),
+  //         videoTrack:
+  //           prev?.videoTrack ?? ({} as ICameraVideoTrack & ILocalVideoTrack),
+  //         screenTrack: {
+  //           screenVideoTrack,
+  //           screenAudioTrack,
+  //         },
+  //       }));
+
+  //       if (screenVideoTrack) {
+  //         await rtcClient.publish([screenVideoTrack]);
+  //         console.log("Screen video track added.");
+  //       }
+  //       if (screenAudioTrack) {
+  //         // await rtcClient.unpublish([localUserTrack!.videoTrack]);
+  //         await rtcClient.publish([screenAudioTrack]);
+  //         console.log("Screen audio track added.");
+  //       }
+  //     } else {
+  //       console.error("Failed to create screen video track.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error during screen sharing:", error);
+  //   }
+  // };
+
+  // This function will be called when the user stops screen sharing
+  // const handleScreenTrackEnd = async () => {
+  //   if (localUserTrack?.screenTrack?.screenVideoTrack) {
+  //     localUserTrack.screenTrack.screenVideoTrack.close();
+  //   }
+  //   if (localUserTrack?.screenTrack?.screenAudioTrack) {
+  //     localUserTrack.screenTrack.screenAudioTrack.close();
+  //   }
+
+  //   alert("Screen sharing has ended.");
+  //   setLocalUserTrack((prev) => ({
+  //     audioTrack:
+  //       prev?.audioTrack ?? ({} as ILocalAudioTrack & IMicrophoneAudioTrack),
+  //     videoTrack:
+  //       prev?.videoTrack ?? ({} as ICameraVideoTrack & ILocalVideoTrack),
+  //     screenTrack: null,
+  //   }));
+
+  //   const { screenVideoTrack, screenAudioTrack } =
+  //     localUserTrack?.screenTrack || {};
+  //   if (screenVideoTrack) {
+  //     await rtcClient.unpublish([screenVideoTrack]);
+  //     console.log("Screen video track unpublished.");
+  //   }
+  //   if (screenAudioTrack) {
+  //     await rtcClient.unpublish([screenAudioTrack]);
+  //     console.log("Screen audio track unpublished.");
+  //   }
+  // };
+
   const handleShareScreen = async () => {
     try {
-      if (localUserTrack?.videoTrack?.isPlaying) {
-        alert("stopping video sharing");
-        await localUserTrack.videoTrack.setEnabled(false);
-      }
+      // Stop local video track if it's playing
+      // if (localUserTrack?.videoTrack?.isPlaying) {
+      //   alert("Stopping video sharing");
+      //   await localUserTrack.videoTrack.setEnabled(false);
+      // }
 
-      // Create the screen video and audio tracks
-      const [screenTrack] = await Promise.all([
-        AgoraRTC.createScreenVideoTrack(
-          {
-            encoderConfig: "720p",
-          },
-          "auto"
-        ),
-      ]);
+      // Create screen sharing tracks
+      const screenTracks = await AgoraRTC.createScreenVideoTrack(
+        {
+          encoderConfig: "720p", // Adjust as needed
+        },
+        "auto" // Enables audio if available
+      );
 
-      // Prepare screen track object
-      let screenVideoTrack = null;
-      let screenAudioTrack = null;
+      // Separate video and audio tracks
+      const screenVideoTrack =
+        screenTracks instanceof Array ? screenTracks[0] : screenTracks;
+      const screenAudioTrack =
+        screenTracks instanceof Array ? screenTracks[1] : null;
 
-      if (screenTrack instanceof Array) {
-        // Array: Separate video and audio tracks
-        screenVideoTrack = screenTrack[0];
-        screenAudioTrack = screenTrack[1];
-      } else {
-        // Single track: Only video
-        screenVideoTrack = screenTrack;
-      }
-
-      if (screenVideoTrack) {
-        // Bind the "track-ended" event to handle the case where sharing stops
-        screenVideoTrack.on("track-ended", handleScreenTrackEnd);
-
-        // Update the state with the new screen tracks
-        setLocalUserTrack((prev) => ({
-          audioTrack:
-            prev?.audioTrack ??
-            ({} as ILocalAudioTrack & IMicrophoneAudioTrack),
-          videoTrack:
-            prev?.videoTrack ?? ({} as ICameraVideoTrack & ILocalVideoTrack),
-          screenTrack: {
-            screenVideoTrack,
-            screenAudioTrack,
-          },
-        }));
-
-        if (screenVideoTrack) {
-          await rtcClient.publish([screenVideoTrack]);
-          console.log("Screen video track added.");
-        }
-        if (screenAudioTrack) {
-          // await rtcClient.unpublish([localUserTrack!.videoTrack]);
-          await rtcClient.publish([screenAudioTrack]);
-          console.log("Screen audio track added.");
-        }
-      } else {
+      if (!screenVideoTrack) {
         console.error("Failed to create screen video track.");
+        return;
+      }
+
+      // Bind the "track-ended" event to handle stop sharing
+      screenVideoTrack.on("track-ended", handleScreenTrackEnd);
+
+      // Update screenTrack state
+      setScreenTrack({
+        screenVideoTrack,
+        screenAudioTrack,
+      });
+
+      // Publish screen tracks to the channel
+      if (screenVideoTrack) {
+        await rtcClient.publish([screenVideoTrack]);
+        console.log("Screen video track published.");
+      }
+
+      if (screenAudioTrack) {
+        await rtcClient.publish([screenAudioTrack]);
+        console.log("Screen audio track published.");
       }
     } catch (error) {
       console.error("Error during screen sharing:", error);
     }
   };
 
-  // This function will be called when the user stops screen sharing
   const handleScreenTrackEnd = async () => {
-    if (localUserTrack?.screenTrack?.screenVideoTrack) {
-      localUserTrack.screenTrack.screenVideoTrack.close();
+    console.log("Screen sharing stopped.");
+
+    // Unpublish and reset the screen tracks
+    if (screenTrack?.screenVideoTrack) {
+      await rtcClient.unpublish([screenTrack.screenVideoTrack]);
+      screenTrack.screenVideoTrack.stop();
     }
-    if (localUserTrack?.screenTrack?.screenAudioTrack) {
-      localUserTrack.screenTrack.screenAudioTrack.close();
+    if (screenTrack?.screenAudioTrack) {
+      await rtcClient.unpublish([screenTrack.screenAudioTrack]);
+      screenTrack.screenAudioTrack.stop();
     }
 
-    alert("Screen sharing has ended.");
-    setLocalUserTrack((prev) => ({
-      audioTrack:
-        prev?.audioTrack ?? ({} as ILocalAudioTrack & IMicrophoneAudioTrack),
-      videoTrack:
-        prev?.videoTrack ?? ({} as ICameraVideoTrack & ILocalVideoTrack),
-      screenTrack: null,
-    }));
-
-    const { screenVideoTrack, screenAudioTrack } =
-      localUserTrack?.screenTrack || {};
-    if (screenVideoTrack) {
-      await rtcClient.unpublish([screenVideoTrack]);
-      console.log("Screen video track unpublished.");
-    }
-    if (screenAudioTrack) {
-      await rtcClient.unpublish([screenAudioTrack]);
-      console.log("Screen audio track unpublished.");
-    }
+    setScreenTrack(null); // Reset screenTrack state
   };
 
   const handleConfigureWaitingArea = async () => {
@@ -424,12 +494,35 @@ export const AgoraKit: React.FC = () => {
     await initRtm(username!);
   };
 
+  // const handleUserPublished = (user: any, mediaType: "audio" | "video") => {
+  //   const uid = String(user.uid);
+  //   const updatedUsers = { ...remoteUsersRef.current, [uid]: user };
+  //   remoteUsersRef.current = updatedUsers;
+  //   setRemoteUsers(updatedUsers);
+  //   subscribe(user, mediaType);
+  // };
+
   const handleUserPublished = (user: any, mediaType: "audio" | "video") => {
     const uid = String(user.uid);
-    const updatedUsers = { ...remoteUsersRef.current, [uid]: user };
-    remoteUsersRef.current = updatedUsers;
-    setRemoteUsers(updatedUsers);
     subscribe(user, mediaType);
+
+    // Detect if the user is sharing a screen
+    if (mediaType === "video" && user.videoTrack.isScreenTrack()) {
+      setRemoteUsers((prevUsers) => ({
+        ...prevUsers,
+        [uid]: {
+          ...prevUsers[uid],
+          screenTrack: user.videoTrack,
+        },
+      }));
+    } else {
+      setRemoteUsers((prevUsers) => ({
+        ...prevUsers,
+        [uid]: {
+          ...prevUsers[uid],
+        },
+      }));
+    }
   };
 
   const handleUserUnpublished = (user: any, mediaType: "audio" | "video") => {
@@ -455,12 +548,32 @@ export const AgoraKit: React.FC = () => {
     }
   };
 
+  // const subscribe = async (user: any, mediaType: "audio" | "video") => {
+  //   await rtcClient.subscribe(user, mediaType);
+
+  //   const uid = String(user.uid);
+  //   const updatedUsers = { ...remoteUsersRef.current, [uid]: user };
+  //   setRemoteUsers(updatedUsers);
+  // };
+
   const subscribe = async (user: any, mediaType: "audio" | "video") => {
     await rtcClient.subscribe(user, mediaType);
 
     const uid = String(user.uid);
-    const updatedUsers = { ...remoteUsersRef.current, [uid]: user };
-    setRemoteUsers(updatedUsers);
+    if (mediaType === "video") {
+      const videoTrack = user.videoTrack;
+      setRemoteUsers((prevUsers) => ({
+        ...prevUsers,
+        [uid]: {
+          ...prevUsers[uid],
+          videoTrack,
+        },
+      }));
+    }
+    if (mediaType === "audio") {
+      const audioTrack = user.audioTrack;
+      audioTrack.play();
+    }
   };
 
   const leave = async () => {
@@ -492,36 +605,34 @@ export const AgoraKit: React.FC = () => {
         <>
           <div className="grid grid-cols-2">
             <div className="video-group w-full lg:w-1/2">
+              {joinRoom && (
+                <div className="flex flex-col video-group w-full lg:w-1/2">
+                  <div>
+                    <h3>Channel name: {options?.channel || ""}</h3>
+                  </div>
+                </div>
+              )}
               {/*  Channel Participants */}
-              <section className="border rounded shadow-md">
+              <section className="w-full border rounded shadow-md">
                 <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
                   Channel Participants
                 </div>
                 <div className="p-4">
-                  <div id="remote-playerlist" className="min-h-[220px] w-full">
-                    <div>
-                      <p> Local User: {options?.uid}</p>{" "}
-                      <button
-                        onClick={() =>
-                          handleMuteRemoteUserMicrophone(
-                            "mute",
-                            parseInt(`${options?.uid}`)
-                          )
-                        }
-                      >
-                        mute audio
-                      </button>
-                    </div>
+                  <div id="remote-playerlist" className="h-auto w-full">
+                    <p> Local User: {options?.uid} </p>
+
                     {Object.keys(remoteUsers).map((uid) => {
                       const user = remoteUsers[uid];
                       console.log("remote user", remoteUsers);
                       return (
-                        <div>
-                          <p>
-                            {" "}
-                            User: {user?.name} {uid}
-                          </p>
+                        // <div className=" flex items-center justify-between"  >
+                        <p
+                          className="flex items-center justify-between"
+                          key={uid}
+                        >
+                          User: {user?.name} {uid}
                           <button
+                            className="flex border bg-gray-400"
                             onClick={() =>
                               handleMuteRemoteUserMicrophone(
                                 "mute",
@@ -529,9 +640,10 @@ export const AgoraKit: React.FC = () => {
                               )
                             }
                           >
-                            mute audio & video
+                            <span>🔇</span>
                           </button>
                           <button
+                            className="flex border bg-gray-400"
                             onClick={() =>
                               handleMuteRemoteUserMicrophone(
                                 "unmute",
@@ -539,22 +651,15 @@ export const AgoraKit: React.FC = () => {
                               )
                             }
                           >
-                            unmute audio & video
+                            <span>🔊</span>
                           </button>
-                        </div>
+                        </p>
                       );
                     })}
                   </div>
                 </div>
               </section>
 
-              {joinRoom && (
-                <div className="flex flex-col video-group w-full lg:w-1/2">
-                  <div>
-                    <h1>Channel name: {options?.channel || ""}</h1>
-                  </div>
-                </div>
-              )}
               {/* Local Stream */}
               <div className="flex flex-wrap gap-4">
                 {localUserTrack &&
@@ -580,27 +685,35 @@ export const AgoraKit: React.FC = () => {
                     Object.keys(remoteUsers).map((uid) => {
                       const user = remoteUsers[uid];
                       console.log("remote user", user);
-                      return (
-                        <>
-                          <div className="p-4">
-                            <div
-                              id="remote-playerlist"
-                              className="min-h-[220px] w-full"
-                            >
-                              <div className="bg-gray-100 text-gray-700 font-semibold px-2 py-2 border-b">
-                                Remote Stream
+                      if (user.videoTrack) {
+                        return (
+                          <>
+                            <div className="p-4">
+                              <div
+                                id="remote-playerlist"
+                                className="min-h-[220px] w-full"
+                              >
+                                <div className="bg-gray-100 text-gray-700 font-semibold px-2 py-2 border-b">
+                                  Remote Stream
+                                </div>
+                                <StreamPlayer
+                                  key={uid}
+                                  videoTrack={user.videoTrack || undefined}
+                                  audioTrack={user.audioTrack || undefined}
+                                  // screenTrack={user.screenTrack || undefined}
+                                  uid={uid}
+                                />
+                               {screenTrack?.screenVideoTrack && <ScreenShare
+                                  key={uid}
+                                  screenTrack={screenTrack}
+                                  uid={user?.uid}
+                                />}
                               </div>
-                              <StreamPlayer
-                                key={uid}
-                                videoTrack={user.videoTrack || undefined}
-                                audioTrack={user.audioTrack || undefined}
-                                // screenTrack={user.screenTrack || undefined}
-                                uid={uid}
-                              />
                             </div>
-                          </div>
-                        </>
-                      );
+                          </>
+                        );
+                      }
+                      return null;
                     })}
                 </section>
               </div>
