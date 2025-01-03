@@ -119,40 +119,6 @@ export const AgoraKit: React.FC = () => {
     }
   }, [chan, username]);
 
-  useEffect(() => {
-    wsRef.current = ws;
-    try {
-      if (ws) {
-        ws.connect();
-        console.log("WebSocket connected successfully.");
-
-        ws.on("auth_error", (error: string) => {
-          console.error("WebSocket authentication error:", error);
-        });
-
-        ws.on("suggested_username_response", (response: any) => {
-          console.log("Suggested usernames from DB:", response);
-        });
-
-        ws.on("connect_error", (error) => {
-          console.error("WebSocket connection error:", error);
-        });
-
-        ws.on("mute-remote-user-microphone", async (result) => {
-          console.log("handleMuteRemoteUserMicrophone....", result);
-          if (result.uid.toString() === options.uid?.toString()) {
-            if (localUserTrack?.audioTrack?.isPlaying) {
-              localUserTrack?.audioTrack!.setEnabled(false);
-            } else if (localUserTrack?.videoTrack?.isPlaying) {
-              await localUserTrack?.videoTrack!.setEnabled(false);
-            }
-          }
-        });
-      }
-    } catch (error) {
-      console.error("WebSocket error:", error);
-    }
-  }, [ws]);
 
   const handleMuteRemoteUserMicrophone = (action: string, uid: number) => {
     console.log("action", action, `${action}-microphone`),
@@ -195,7 +161,7 @@ export const AgoraKit: React.FC = () => {
           localUserTrack?.audioTrack?.enabled ||
           localUserTrack?.videoTrack?.enabled
         ) {
-          // await localUserTrack?.audioTrack!.setEnabled(false);
+          await localUserTrack?.audioTrack!.setEnabled(false);
           await localUserTrack?.videoTrack!.setEnabled(false);
         }
       } else if (
@@ -207,7 +173,7 @@ export const AgoraKit: React.FC = () => {
           !localUserTrack?.videoTrack?.enabled
         ) {
           console.log("muter is enabling here.... ");
-          // await localUserTrack?.audioTrack!.setEnabled(true);
+          await localUserTrack?.audioTrack!.setEnabled(true);
           await localUserTrack?.videoTrack!.setEnabled(true);
         }
       }
