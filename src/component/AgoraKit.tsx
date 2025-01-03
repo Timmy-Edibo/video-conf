@@ -155,9 +155,10 @@ export const AgoraKit: React.FC = () => {
   }, [ws]);
 
   const handleMuteRemoteUserMicrophone = (action: string, uid: number) => {
-    rtmChannel.sendMessage({
-      text: JSON.stringify({ command: `${action}-microphone`, uid: uid }),
-    });
+    console.log("action", action, `${action}-microphone`),
+      rtmChannel.sendMessage({
+        text: JSON.stringify({ command: `${action}-microphone`, uid: uid }),
+      });
   };
 
   const initRtm = async (name: string) => {
@@ -192,7 +193,10 @@ export const AgoraKit: React.FC = () => {
         console.log("muter is true here ");
         await localUserTrack?.audioTrack!.setEnabled(false);
         await localUserTrack?.videoTrack!.setEnabled(false);
-      } else {
+      } else if (
+        message.command === "unmute-microphone" &&
+        options.uid == message.uid
+      ) {
         console.log("muter is true here ");
         await localUserTrack?.audioTrack!.setEnabled(true);
         await localUserTrack?.videoTrack!.setEnabled(true);
