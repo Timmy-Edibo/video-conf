@@ -689,7 +689,7 @@ export const AgoraKit: React.FC = () => {
                     Object.keys(remoteUsers).map((uid) => {
                       const user = remoteUsers[uid];
                       console.log("remote user", user);
-                      if (user.videoTrack) {
+                      if (user.videoTrack && String(uid) !== String(rtcScreenShareOptions.uid)) {
                         return (
                           <>
                             <div className="p-4">
@@ -707,13 +707,6 @@ export const AgoraKit: React.FC = () => {
                                   // screenTrack={user.screenTrack || undefined}
                                   uid={uid}
                                 />
-                                {screenTrack?.screenVideoTrack && (
-                                  <ScreenShare
-                                    key={uid}
-                                    screenTrack={screenTrack}
-                                    uid={user?.uid}
-                                  />
-                                )}
                               </div>
                             </div>
                           </>
@@ -721,6 +714,15 @@ export const AgoraKit: React.FC = () => {
                       }
                       return null;
                     })}
+                </section>
+
+                <section className="border rounded shadow-md w-full lg:w-1/2">
+                  {screenTrack?.screenVideoTrack && (
+                    <ScreenShare
+                      screenTrack={screenTrack}
+                      uid={String(rtcScreenShareOptions?.uid)}
+                    />
+                  )}
                 </section>
 
                 {/* Remote Screen Sharers */}
@@ -732,7 +734,7 @@ export const AgoraKit: React.FC = () => {
                       console.log("remote screen share user", user);
                       if (
                         user.videoTrack &&
-                        uid !== rtcScreenShareOptions.uid
+                        String(uid) !== String(rtcScreenShareOptions.uid)
                       ) {
                         return (
                           <>
