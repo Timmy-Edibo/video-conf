@@ -163,6 +163,41 @@ export const AgoraKit: React.FC = () => {
     });
   };
 
+  const handleRemoveUser = (action: string, uid: number) => {
+    console.log("action", action, `${action}-microphone`);
+    rtmChannel.sendMessage({
+      text: JSON.stringify({ command: `${action}-microphone`, uid: uid }),
+    });
+  };
+
+  const handleTransferHostPermission = (action: string, uid: number) => {
+    console.log("action", action, `${action}-microphone`);
+    rtmChannel.sendMessage({
+      text: JSON.stringify({ command: `${action}-microphone`, uid: uid }),
+    });
+  };
+
+  const handleAdmitUsers = (action: string, uid: number) => {
+    console.log("action", action, `${action}-microphone`);
+    rtmChannel.sendMessage({
+      text: JSON.stringify({ command: `${action}-microphone`, uid: uid }),
+    });
+  };
+
+  const handleEndMeeting = (action: string, uid: number) => {
+    console.log("action", action, `${action}-microphone`);
+    rtmChannel.sendMessage({
+      text: JSON.stringify({ command: `${action}-microphone`, uid: uid }),
+    });
+  };
+
+  const handleEndScreenShare = (action: string, uid: number) => {
+    console.log("action", action, `${action}-microphone`);
+    rtmChannel.sendMessage({
+      text: JSON.stringify({ command: `${action}-microphone`, uid: uid }),
+    });
+  };
+
   const initRtm = async (name: string) => {
     rtmClient = AgoraRTM.createInstance(options.appid!);
     console.log("checking for error before...", rtmClient);
@@ -189,10 +224,8 @@ export const AgoraKit: React.FC = () => {
     channel.on("MemberJoined", handleMemberJoined);
     channel.on("MemberLeft", handleMemberLeft);
     channel.on("ChannelMessage", async ({ text }: any) => {
-      console.log("muter is called");
       const message = JSON.parse(text);
       if (message.command === "mute-microphone" && options.uid == message.uid) {
-        console.log("muter is disabling here.. ");
         if (
           localUserTrack?.audioTrack?.enabled ||
           localUserTrack?.videoTrack?.enabled
@@ -208,7 +241,6 @@ export const AgoraKit: React.FC = () => {
           !localUserTrack?.audioTrack?.enabled ||
           !localUserTrack?.videoTrack?.enabled
         ) {
-          console.log("muter is enabling here.... ");
           await localUserTrack?.audioTrack!.setEnabled(true);
           await localUserTrack?.videoTrack!.setEnabled(true);
         }
@@ -258,6 +290,8 @@ export const AgoraKit: React.FC = () => {
         // "userAvatar",
       ]);
 
+      await rtmClient.getChannelAttributes(rtmChannel.channelId)
+
     // let newMember = `
     // <div class="speaker user-rtc-${userRtcUid}" id="${MemberId}">
     //   <img class="user-avatar avatar-${userRtcUid}" src="${userAvatar}"/>
@@ -272,9 +306,6 @@ export const AgoraKit: React.FC = () => {
 
   const handleShareScreen = async () => {
     try {
-      console.log("Calling Screen share func");
-      // rtcScreenShareClient.on("user-published", handleUserPublishedScreen);
-
       // Create screen sharing tracks
       const screenTracks = await AgoraRTC.createScreenVideoTrack(
         {
@@ -304,19 +335,12 @@ export const AgoraKit: React.FC = () => {
         screenAudioTrack,
       });
 
-      // Publish screen tracks to the channel
-      console.log("Screen video track published outside");
-
       if (screenVideoTrack) {
-        console.log("Screen video track published inside");
-
         await rtcScreenShareClient.publish([screenVideoTrack]);
-        console.log("Screen video track published.");
       }
 
       if (screenAudioTrack) {
         await rtcScreenShareClient.publish([screenAudioTrack]);
-        console.log("Screen audio track published.");
       }
     } catch (error) {
       console.error("Error during screen sharing:", error);
@@ -324,8 +348,6 @@ export const AgoraKit: React.FC = () => {
   };
 
   const handleScreenTrackEnd = async () => {
-    console.log("Screen sharing stopped.");
-
     // Unpublish and reset the screen tracks
     if (screenTrack?.screenVideoTrack) {
       await rtcScreenShareClient.unpublish([screenTrack.screenVideoTrack]);
@@ -689,7 +711,10 @@ export const AgoraKit: React.FC = () => {
                     Object.keys(remoteUsers).map((uid) => {
                       const user = remoteUsers[uid];
                       console.log("remote user", user);
-                      if (user.videoTrack && String(uid) !== String(rtcScreenShareOptions.uid)) {
+                      if (
+                        user.videoTrack &&
+                        String(uid) !== String(rtcScreenShareOptions.uid)
+                      ) {
                         return (
                           <>
                             <div className="p-4">
