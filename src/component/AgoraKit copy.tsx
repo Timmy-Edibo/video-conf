@@ -225,7 +225,105 @@ export const AgoraKit: React.FC = () => {
     //   .getElementById("members")
     //   .insertAdjacentHTML("beforeend", newMember);
     console.log("rtm clients........", name, userRtcUid, userAvatar);
+    // setUserProfiles((prev: any) => [
+    //   ...prev,
+    //   { uid: MemberId, name, userRtcUid, userAvatar },
+    // ]);
   };
+
+  // const handleShareScreen = async () => {
+  //   try {
+  //     if (localUserTrack?.videoTrack?.isPlaying) {
+  //       alert("stopping video sharing");
+  //       await localUserTrack.videoTrack.setEnabled(false);
+  //     }
+
+  //     // Create the screen video and audio tracks
+  //     const [screenTrack] = await Promise.all([
+  //       AgoraRTC.createScreenVideoTrack(
+  //         {
+  //           encoderConfig: "720p",
+  //         },
+  //         "auto"
+  //       ),
+  //     ]);
+
+  //     // Prepare screen track object
+  //     let screenVideoTrack = null;
+  //     let screenAudioTrack = null;
+
+  //     if (screenTrack instanceof Array) {
+  //       // Array: Separate video and audio tracks
+  //       screenVideoTrack = screenTrack[0];
+  //       screenAudioTrack = screenTrack[1];
+  //     } else {
+  //       // Single track: Only video
+  //       screenVideoTrack = screenTrack;
+  //     }
+
+  //     if (screenVideoTrack) {
+  //       // Bind the "track-ended" event to handle the case where sharing stops
+  //       screenVideoTrack.on("track-ended", handleScreenTrackEnd);
+
+  //       // Update the state with the new screen tracks
+  //       setLocalUserTrack((prev) => ({
+  //         audioTrack:
+  //           prev?.audioTrack ??
+  //           ({} as ILocalAudioTrack & IMicrophoneAudioTrack),
+  //         videoTrack:
+  //           prev?.videoTrack ?? ({} as ICameraVideoTrack & ILocalVideoTrack),
+  //         screenTrack: {
+  //           screenVideoTrack,
+  //           screenAudioTrack,
+  //         },
+  //       }));
+
+  //       if (screenVideoTrack) {
+  //         await rtcClient.publish([screenVideoTrack]);
+  //         console.log("Screen video track added.");
+  //       }
+  //       if (screenAudioTrack) {
+  //         // await rtcClient.unpublish([localUserTrack!.videoTrack]);
+  //         await rtcClient.publish([screenAudioTrack]);
+  //         console.log("Screen audio track added.");
+  //       }
+  //     } else {
+  //       console.error("Failed to create screen video track.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error during screen sharing:", error);
+  //   }
+  // };
+
+  // This function will be called when the user stops screen sharing
+  // const handleScreenTrackEnd = async () => {
+  //   if (localUserTrack?.screenTrack?.screenVideoTrack) {
+  //     localUserTrack.screenTrack.screenVideoTrack.close();
+  //   }
+  //   if (localUserTrack?.screenTrack?.screenAudioTrack) {
+  //     localUserTrack.screenTrack.screenAudioTrack.close();
+  //   }
+
+  //   alert("Screen sharing has ended.");
+  //   setLocalUserTrack((prev) => ({
+  //     audioTrack:
+  //       prev?.audioTrack ?? ({} as ILocalAudioTrack & IMicrophoneAudioTrack),
+  //     videoTrack:
+  //       prev?.videoTrack ?? ({} as ICameraVideoTrack & ILocalVideoTrack),
+  //     screenTrack: null,
+  //   }));
+
+  //   const { screenVideoTrack, screenAudioTrack } =
+  //     localUserTrack?.screenTrack || {};
+  //   if (screenVideoTrack) {
+  //     await rtcClient.unpublish([screenVideoTrack]);
+  //     console.log("Screen video track unpublished.");
+  //   }
+  //   if (screenAudioTrack) {
+  //     await rtcClient.unpublish([screenAudioTrack]);
+  //     console.log("Screen audio track unpublished.");
+  //   }
+  // };
 
   const handleShareScreen = async () => {
     try {
@@ -417,28 +515,14 @@ export const AgoraKit: React.FC = () => {
     }
   };
 
-  // const handleUserUnpublished = (user: any, mediaType: "audio" | "video") => {
-  //   console.log("Checking if this event was called.........")
-  //   if (mediaType === "video") {
-  //     const uid = String(user.uid);
-  //     const updatedUsers = { ...remoteUsersRef.current };
-  //     delete updatedUsers[uid];
-  //     remoteUsersRef.current = updatedUsers;
-  //     setRemoteUsers(updatedUsers);
-  //   }
-  // };
-
   const handleUserUnpublished = (user: any, mediaType: "audio" | "video") => {
-        console.log("Checking if this event was called.........", remoteUsers)
-
-    const uid = String(user.uid);
-    setRemoteUsers((prevUsers) => ({
-      ...prevUsers,
-      [uid]: {
-        ...prevUsers[uid],
-        [mediaType]: null, // Indicate muted state
-      },
-    }));
+    if (mediaType === "video") {
+      const uid = String(user.uid);
+      const updatedUsers = { ...remoteUsersRef.current };
+      delete updatedUsers[uid];
+      remoteUsersRef.current = updatedUsers;
+      setRemoteUsers(updatedUsers);
+    }
   };
 
   const createTrackAndPublish = async () => {
@@ -609,13 +693,11 @@ export const AgoraKit: React.FC = () => {
                                   // screenTrack={user.screenTrack || undefined}
                                   uid={uid}
                                 />
-                                {screenTrack?.screenVideoTrack && (
-                                  <ScreenShare
-                                    key={uid}
-                                    screenTrack={screenTrack}
-                                    uid={user?.uid}
-                                  />
-                                )}
+                               {screenTrack?.screenVideoTrack && <ScreenShare
+                                  key={uid}
+                                  screenTrack={screenTrack}
+                                  uid={user?.uid}
+                                />}
                               </div>
                             </div>
                           </>
