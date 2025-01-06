@@ -66,7 +66,7 @@ export const AgoraKit: React.FC = () => {
   const [remoteUsers, setRemoteUsers] = useState<Record<string, any>>({});
   const [remoteScreenShareUsers, setRemoteScreenShareUsers] = useState<
     Record<string, any>
-  >({});
+ | null >({});
 
   const [joinRoom, setJoinRoom] = useState(false);
   const [stage, setStage] = useState("prepRoom");
@@ -191,9 +191,9 @@ export const AgoraKit: React.FC = () => {
     });
   };
 
-  const handleEndScreenShare = (action: string, uid: number) => {
-    handleScreenTrackEnd();
-    setRemoteScreenShareUsers(null as any);
+  const handleEndScreenShare = async (action: string, uid: number) => {
+    await handleScreenTrackEnd();
+    setRemoteScreenShareUsers(null);
     rtmChannel.sendMessage({
       text: JSON.stringify({
         command: action,
@@ -528,7 +528,7 @@ export const AgoraKit: React.FC = () => {
     setRemoteScreenShareUsers((prevUsers) => ({
       ...prevUsers,
       [uid]: {
-        ...prevUsers[uid],
+        ...prevUsers![uid],
         [mediaType]: null,
       },
     }));
@@ -578,13 +578,13 @@ export const AgoraKit: React.FC = () => {
       const videoTrack = user.videoTrack;
 
       const remoteScreenUsers = Object.keys(remoteScreenShareUsers!);
-      if (remoteScreenShareUsers.length > 0) {
+      if (remoteScreenShareUsers!.length > 0) {
         const currentUserScreen = remoteScreenUsers[0];
 
         setRemoteScreenShareUsers((prevUsers) => ({
           ...prevUsers,
           [currentUserScreen]: {
-            ...prevUsers[uid],
+            ...prevUsers![uid],
             videoTrack,
           },
         }));
@@ -592,7 +592,7 @@ export const AgoraKit: React.FC = () => {
         setRemoteScreenShareUsers((prevUsers) => ({
           ...prevUsers,
           [uid]: {
-            ...prevUsers[uid],
+            ...prevUsers![uid],
             videoTrack,
           },
         }));
@@ -765,7 +765,6 @@ export const AgoraKit: React.FC = () => {
                     remoteScreenShareUsers &&
                     Object.keys(remoteScreenShareUsers).map((uid) => {
                       const user = remoteScreenShareUsers[uid];
-                      console.log("remote screen share user", user);
                       if (
                         user.videoTrack &&
                         String(uid) !== String(rtcScreenShareOptions.uid)
