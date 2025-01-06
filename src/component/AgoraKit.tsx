@@ -163,12 +163,144 @@ export const AgoraKit: React.FC = () => {
     });
   };
 
-  const handleRemoveUser = (action: string, uid: number) => {
-    console.log("action", action, `${action}-microphone`);
-    rtmChannel.sendMessage({
-      text: JSON.stringify({ command: `${action}-microphone`, uid: uid }),
-    });
+  // Set up MessageFromPeer event listener globally
+
+  // Function to send a removal message
+  const handleRemoveUser = async (message: string, uid: number) => {
+    try {
+      const result = await rtmClient.sendMessageToPeer(
+        { text: message },
+        uid.toString()
+      );
+
+
+      if (result.hasPeerReceived) {
+        console.log(`User ${uid} received the removal message.`);
+        
+        const removeUser = async (message: any, peerId: string) => {
+          console.log(`Message from ${peerId}: ${message.text}`);
+
+          if (message.text === "LEAVE_MEETING") {
+            console.log("Received leave instruction. Exiting channel...");
+
+            try {
+              // Leave the RTC channel
+              await rtcClient.leave();
+              console.log("Left the RTC channel.");
+
+              // Optionally log out from RTM
+              await rtmClient.logout();
+              console.log("Logged out from RTM.");
+
+              // Update the UI
+              alert("You have been removed from the broadcast.");
+            } catch (error) { 
+              console.error("Error while leaving the channel:", error);
+            }
+          }
+        };
+
+        rtmClient.on("MessageFromPeer", removeUser);
+        rtcClient.on("user-left", handleUserLeft);
+
+      } else {
+        console.log(`User ${uid} did not receive the message.`);
+      }
+      console.log(remoteUsers);
+
+    } catch (error) {
+      console.error("Failed to send removal message:", error);
+    }
   };
+
+  // Function to handle removing a user
+  // const handleRemoveUser = async (message: string, uid: number) => {
+  //   try {
+  //     const result = await rtmClient.sendMessageToPeer(
+  //       { text: message },
+  //       uid.toString()
+  //     );
+
+  //     if (result.hasPeerReceived) {
+  //       console.log(`User ${uid} received the removal message.`);
+  //       rtmClient.on("MessageFromPeer", () => removeUser(message, uid));
+  //     } else {
+  //       console.log(`User ${uid} did not receive the message.`);
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to send removal message:", error);
+  //   }
+  // };
+
+  // const removeUser = async (message: any, uid: number | string) => {
+  //   if (message.text === "LEAVE_MEETING") {
+  //     console.log(`Message from ${uid}: ${message.text}`);
+
+  //     console.log("Received leave instruction. Exiting channel...");
+
+  //     try {
+  //       // Leave the RTC channel
+  //       // await rtcClient.leave();
+  //       console.log("Left the RTC channel.");
+
+  //       // Optionally log out from RTM
+  //       // await rtmClient.logout();
+  //       console.log("Logged out from RTM.");
+
+  //       // Update the UI
+  //       alert("You have been removed from the broadcast.");
+  //     } catch (error) {
+  //       console.error("Error while leaving the channel:", error);
+  //     }
+  //   }
+  // };
+
+  // const handleRemoveUser = async (uid: number) => {
+  //   try {
+  //     const message = "LEAVE_MEETING";
+  //     const result = await rtmClient.sendMessageToPeer(
+  //       { text: message },
+  //       uid.toString() // UID of the user to be removed
+  //     );
+
+  //     if (result.hasPeerReceived) {
+  //       console.log(`User ${uid} received the removal message.`);
+  //     } else {
+  //       console.log(`User ${uid} did not receive the message.`);
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to send removal message:", error);
+  //   }
+
+  //   rtmClient.on("MessageFromPeer", async (message, peerId) => {
+  //     console.log(`Message from ${peerId}: ${message.text}`);
+
+  //     if (message.text === "LEAVE_MEETING") {
+  //       console.log("Received leave instruction. Exiting channel...");
+
+  //       // Leave the RTC channel
+  //       await rtcClient.leave();
+  //       console.log("Left the RTC channel.");
+
+  //       // Optionally log out from RTM
+  //       await rtmClient.logout();
+  //       console.log("Logged out from RTM.");
+
+  //       // Update the UI
+  //       alert("You have been removed from the broadcast.");
+  //     }
+  //   });
+
+  //   const leaveChannel = async () => {
+  //     try {
+  //       await rtcClient.leave();
+  //       console.log("Successfully left the channel.");
+  //     } catch (error) {
+  //       console.error("Error leaving the channel:", error);
+  //     }
+  //   };
+
+  // };
 
   const handleTransferHostPermission = (action: string, uid: number) => {
     console.log("action", action, `${action}-microphone`);
@@ -282,15 +414,15 @@ export const AgoraKit: React.FC = () => {
     // document.getElementById(MemberId).remove();
   };
 
-  let handleMemberJoined = async (MemberId: string) => {
-    let { name, userRtcUid, userAvatar } =
+  const handleMemberJoined = async (MemberId: string) => {
+    const { name, userRtcUid, userAvatar } =
       await rtmClient.getUserAttributesByKeys(MemberId, [
         "name",
         "userRtcUid",
         // "userAvatar",
       ]);
 
-      await rtmClient.getChannelAttributes(rtmChannel.channelId)
+    await rtmClient.getChannelAttributes(rtmChannel.channelId);
 
     // let newMember = `
     // <div class="speaker user-rtc-${userRtcUid}" id="${MemberId}">
@@ -679,6 +811,14 @@ export const AgoraKit: React.FC = () => {
                           >
                             <span>🔊</span>
                           </button>
+                          <button
+                            className="flex border bg-gray-400"
+                            onClick={() =>
+                              handleRemoveUser("LEAVE_MEETING", parseInt(uid))
+                            }
+                          >
+                            <span>❌</span>
+                          </button>
                         </p>
                       );
                     })}
@@ -717,7 +857,7 @@ export const AgoraKit: React.FC = () => {
                       ) {
                         return (
                           <>
-                            <div className="p-4">
+                            <div key={uid} className="p-4">
                               <div
                                 id="remote-playerlist"
                                 className="min-h-[220px] w-full"
