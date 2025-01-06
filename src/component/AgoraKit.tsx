@@ -193,11 +193,11 @@ export const AgoraKit: React.FC = () => {
 
   const handleEndScreenShare = (action: string, uid: number) => {
     handleScreenTrackEnd();
-    console.log("action", action, `${action}-microphone`);
+    setRemoteScreenShareUsers(null as any);
     rtmChannel.sendMessage({
       text: JSON.stringify({
-        command: "end-screenshare",
-        text: `${options.uid} has stopped presenting`,
+        command: action,
+        text: `${uid} has stopped presenting`,
       }),
     });
   };
@@ -814,10 +814,13 @@ export const AgoraKit: React.FC = () => {
           <button
             className="h-12 rounded-lg w-auto ml-4 bg-red-600 text-white"
             onClick={() => {
-              handleEndScreenShare("end-screenshare", parseInt(`${options.uid}`));
+              handleEndScreenShare(
+                "end-screenshare",
+                parseInt(`${options.uid}`)
+              );
             }}
           >
-            Share Screen
+            End Presentation
           </button>
         </div>
       )}
