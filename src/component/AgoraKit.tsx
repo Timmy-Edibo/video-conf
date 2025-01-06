@@ -192,9 +192,13 @@ export const AgoraKit: React.FC = () => {
   };
 
   const handleEndScreenShare = (action: string, uid: number) => {
+    handleScreenTrackEnd();
     console.log("action", action, `${action}-microphone`);
     rtmChannel.sendMessage({
-      text: JSON.stringify({ command: `${action}-microphone`, uid: uid }),
+      text: JSON.stringify({
+        command: "end-screenshare",
+        text: `${options.uid} has stopped presenting`,
+      }),
     });
   };
 
@@ -248,6 +252,8 @@ export const AgoraKit: React.FC = () => {
           await stepLeave();
           await rtmClient.logout();
         }
+      } else if (message.command === "end-screenshare" && message.text) {
+        alert(message.text);
       }
     });
   };
@@ -541,14 +547,6 @@ export const AgoraKit: React.FC = () => {
     }
   };
 
-  // const subscribe = async (user: any, mediaType: "audio" | "video") => {
-  //   await rtcClient.subscribe(user, mediaType);
-
-  //   const uid = String(user.uid);
-  //   const updatedUsers = { ...remoteUsersRef.current, [uid]: user };
-  //   setRemoteUsers(updatedUsers);
-  // };
-
   const subscribe = async (user: any, mediaType: "audio" | "video") => {
     await rtcClient.subscribe(user, mediaType);
 
@@ -808,6 +806,15 @@ export const AgoraKit: React.FC = () => {
             className="h-12 rounded-lg w-auto ml-4 bg-blue-600 text-white"
             onClick={() => {
               handleShareScreen();
+            }}
+          >
+            Share Screen
+          </button>
+
+          <button
+            className="h-12 rounded-lg w-auto ml-4 bg-red-600 text-white"
+            onClick={() => {
+              handleEndScreenShare("end-screenshare", parseInt(`${options.uid}`));
             }}
           >
             Share Screen
