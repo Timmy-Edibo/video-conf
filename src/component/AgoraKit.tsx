@@ -194,13 +194,6 @@ export const AgoraKit: React.FC = () => {
 
   const handleEndScreenShare = async (action: string, uid: number) => {
     await handleScreenTrackEnd();
-    Object.keys(remoteScreenShareUsers!).map((uid) => {
-      const user = remoteScreenShareUsers![uid];
-      setRemoteScreenShareUsers((prev) => ({
-        ...prev,
-        [uid]: null,
-      }));
-    });
 
     rtmChannel.sendMessage({
       text: JSON.stringify({
@@ -377,6 +370,15 @@ export const AgoraKit: React.FC = () => {
     }
 
     setScreenTrack(null);
+
+    const uid = Object.keys(remoteScreenShareUsers!)[0];
+    setRemoteScreenShareUsers((prevUsers) => ({
+      ...prevUsers,
+      [uid]: {
+        ...prevUsers![uid],
+        videoTrack: null,
+      },
+    }));
   };
 
   const handleConfigureWaitingArea = async () => {
@@ -771,6 +773,9 @@ export const AgoraKit: React.FC = () => {
                 <section className="border rounded shadow-md w-full lg:w-1/2">
                   {joinRoom &&
                     remoteScreenShareUsers &&
+                    Object.keys(remoteScreenShareUsers!).length > 0 &&
+                    Object.values(remoteScreenShareUsers!)[0].videoTrack !==
+                      null &&
                     Object.keys(remoteScreenShareUsers).map((uid) => {
                       const user = remoteScreenShareUsers[uid];
                       if (
