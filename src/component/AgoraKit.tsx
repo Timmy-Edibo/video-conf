@@ -64,9 +64,10 @@ export const AgoraKit: React.FC = () => {
   const [showStepJoinSuccess, setShowStepJoinSuccess] = useState(false);
   const [leaveDisabled, setLeaveDisabled] = useState(true);
   const [remoteUsers, setRemoteUsers] = useState<Record<string, any>>({});
-  const [remoteScreenShareUsers, setRemoteScreenShareUsers] = useState<
-    Record<string, any>
- | null >({});
+  const [remoteScreenShareUsers, setRemoteScreenShareUsers] = useState<Record<
+    string,
+    any
+  > | null>({});
 
   const [joinRoom, setJoinRoom] = useState(false);
   const [stage, setStage] = useState("prepRoom");
@@ -193,7 +194,14 @@ export const AgoraKit: React.FC = () => {
 
   const handleEndScreenShare = async (action: string, uid: number) => {
     await handleScreenTrackEnd();
-    setRemoteScreenShareUsers(null);
+    Object.keys(remoteScreenShareUsers!).map((uid) => {
+      const user = remoteScreenShareUsers![uid];
+      setRemoteScreenShareUsers((prev) => ({
+        ...prev,
+        [uid]: null,
+      }));
+    });
+
     rtmChannel.sendMessage({
       text: JSON.stringify({
         command: action,
