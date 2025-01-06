@@ -163,144 +163,12 @@ export const AgoraKit: React.FC = () => {
     });
   };
 
-  // Set up MessageFromPeer event listener globally
-
   // Function to send a removal message
   const handleRemoveUser = async (message: string, uid: number) => {
-    try {
-      const result = await rtmClient.sendMessageToPeer(
-        { text: message },
-        uid.toString()
-      );
-
-
-      if (result.hasPeerReceived) {
-        console.log(`User ${uid} received the removal message.`);
-        
-        const removeUser = async (message: any, peerId: string) => {
-          console.log(`Message from ${peerId}: ${message.text}`);
-
-          if (message.text === "LEAVE_MEETING") {
-            console.log("Received leave instruction. Exiting channel...");
-
-            try {
-              // Leave the RTC channel
-              await rtcClient.leave();
-              console.log("Left the RTC channel.");
-
-              // Optionally log out from RTM
-              await rtmClient.logout();
-              console.log("Logged out from RTM.");
-
-              // Update the UI
-              alert("You have been removed from the broadcast.");
-            } catch (error) { 
-              console.error("Error while leaving the channel:", error);
-            }
-          }
-        };
-
-        rtmClient.on("MessageFromPeer", removeUser);
-        rtcClient.on("user-left", handleUserLeft);
-
-      } else {
-        console.log(`User ${uid} did not receive the message.`);
-      }
-      console.log(remoteUsers);
-
-    } catch (error) {
-      console.error("Failed to send removal message:", error);
-    }
+    rtmChannel.sendMessage({
+      text: JSON.stringify({ command: message, uid }),
+    });
   };
-
-  // Function to handle removing a user
-  // const handleRemoveUser = async (message: string, uid: number) => {
-  //   try {
-  //     const result = await rtmClient.sendMessageToPeer(
-  //       { text: message },
-  //       uid.toString()
-  //     );
-
-  //     if (result.hasPeerReceived) {
-  //       console.log(`User ${uid} received the removal message.`);
-  //       rtmClient.on("MessageFromPeer", () => removeUser(message, uid));
-  //     } else {
-  //       console.log(`User ${uid} did not receive the message.`);
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to send removal message:", error);
-  //   }
-  // };
-
-  // const removeUser = async (message: any, uid: number | string) => {
-  //   if (message.text === "LEAVE_MEETING") {
-  //     console.log(`Message from ${uid}: ${message.text}`);
-
-  //     console.log("Received leave instruction. Exiting channel...");
-
-  //     try {
-  //       // Leave the RTC channel
-  //       // await rtcClient.leave();
-  //       console.log("Left the RTC channel.");
-
-  //       // Optionally log out from RTM
-  //       // await rtmClient.logout();
-  //       console.log("Logged out from RTM.");
-
-  //       // Update the UI
-  //       alert("You have been removed from the broadcast.");
-  //     } catch (error) {
-  //       console.error("Error while leaving the channel:", error);
-  //     }
-  //   }
-  // };
-
-  // const handleRemoveUser = async (uid: number) => {
-  //   try {
-  //     const message = "LEAVE_MEETING";
-  //     const result = await rtmClient.sendMessageToPeer(
-  //       { text: message },
-  //       uid.toString() // UID of the user to be removed
-  //     );
-
-  //     if (result.hasPeerReceived) {
-  //       console.log(`User ${uid} received the removal message.`);
-  //     } else {
-  //       console.log(`User ${uid} did not receive the message.`);
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to send removal message:", error);
-  //   }
-
-  //   rtmClient.on("MessageFromPeer", async (message, peerId) => {
-  //     console.log(`Message from ${peerId}: ${message.text}`);
-
-  //     if (message.text === "LEAVE_MEETING") {
-  //       console.log("Received leave instruction. Exiting channel...");
-
-  //       // Leave the RTC channel
-  //       await rtcClient.leave();
-  //       console.log("Left the RTC channel.");
-
-  //       // Optionally log out from RTM
-  //       await rtmClient.logout();
-  //       console.log("Logged out from RTM.");
-
-  //       // Update the UI
-  //       alert("You have been removed from the broadcast.");
-  //     }
-  //   });
-
-  //   const leaveChannel = async () => {
-  //     try {
-  //       await rtcClient.leave();
-  //       console.log("Successfully left the channel.");
-  //     } catch (error) {
-  //       console.error("Error leaving the channel:", error);
-  //     }
-  //   };
-
-  // };
 
   const handleTransferHostPermission = (action: string, uid: number) => {
     console.log("action", action, `${action}-microphone`);
@@ -355,26 +223,30 @@ export const AgoraKit: React.FC = () => {
 
     channel.on("MemberJoined", handleMemberJoined);
     channel.on("MemberLeft", handleMemberLeft);
+
     channel.on("ChannelMessage", async ({ text }: any) => {
       const message = JSON.parse(text);
-      if (message.command === "mute-microphone" && options.uid == message.uid) {
-        if (
-          localUserTrack?.audioTrack?.enabled ||
-          localUserTrack?.videoTrack?.enabled
-        ) {
-          await localUserTrack?.audioTrack!.setEnabled(false);
-          await localUserTrack?.videoTrack!.setEnabled(false);
-        }
-      } else if (
-        message.command === "unmute-microphone" &&
-        options.uid == message.uid
-      ) {
-        if (
-          !localUserTrack?.audioTrack?.enabled ||
-          !localUserTrack?.videoTrack?.enabled
-        ) {
-          await localUserTrack?.audioTrack!.setEnabled(true);
-          await localUserTrack?.videoTrack!.setEnabled(true);
+      if (message.uid === options.uid) {
+        if (message.command === "mute-microphone") {
+          if (
+            localUserTrack?.audioTrack?.enabled ||
+            localUserTrack?.videoTrack?.enabled
+          ) {
+            await localUserTrack?.audioTrack!.setEnabled(false);
+            await localUserTrack?.videoTrack!.setEnabled(false);
+          }
+        } else if (message.command === "unmute-microphone") {
+          if (
+            !localUserTrack?.audioTrack?.enabled ||
+            !localUserTrack?.videoTrack?.enabled
+          ) {
+            await localUserTrack?.audioTrack!.setEnabled(true);
+            await localUserTrack?.videoTrack!.setEnabled(true);
+          }
+        } else if (message.command === "LEAVE_MEETING") {
+          alert("You have been removed from the broadcast.");
+          await stepLeave();
+          await rtmClient.logout();
         }
       }
     });
@@ -736,7 +608,6 @@ export const AgoraKit: React.FC = () => {
 
   const leave = async () => {
     if (localUserTrack) {
-      console.log("yes they is local user and it's beomg removed...");
       localUserTrack.audioTrack?.close();
       localUserTrack?.audioTrack?.stop();
 
