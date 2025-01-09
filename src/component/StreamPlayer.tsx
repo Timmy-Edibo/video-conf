@@ -96,6 +96,8 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({
     }
   };
 
+
+
   return (
     <div className="player w-full h-full">
       {/* Conditionally render video element */}
@@ -136,6 +138,7 @@ export const StreamPlayer: React.FC<StreamPlayerProps> = ({
         >
           {isVideoMuted ? "Unmute Video" : "Mute Video"}
         </button>
+        
       </div>
     </div>
   );

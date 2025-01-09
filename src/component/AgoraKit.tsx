@@ -174,7 +174,7 @@ export const AgoraKit: React.FC = () => {
   const handleTransferHostPermission = (action: string, uid: number) => {
     console.log("action", action, `${action}-microphone`);
     rtmChannel.sendMessage({
-      text: JSON.stringify({ command: `${action}-microphone`, uid: uid }),
+      text: JSON.stringify({ command: `transfer-host`, uid: uid }),
     });
   };
 
@@ -200,6 +200,10 @@ export const AgoraKit: React.FC = () => {
         command: action,
         text: `${uid} has stopped presenting`,
       }),
+    });
+
+    rtmChannel.sendMessage({
+      text: JSON.stringify({ command: "stop-remote-screenshare", uid }),
     });
   };
 
@@ -231,32 +235,139 @@ export const AgoraKit: React.FC = () => {
 
     channel.on("ChannelMessage", async ({ text }: any) => {
       const message = JSON.parse(text);
+
       if (message.uid === options.uid) {
-        if (message.command === "mute-microphone") {
-          if (
-            localUserTrack?.audioTrack?.enabled ||
-            localUserTrack?.videoTrack?.enabled
-          ) {
-            await localUserTrack?.audioTrack!.setEnabled(false);
-            await localUserTrack?.videoTrack!.setEnabled(false);
-          }
-        } else if (message.command === "unmute-microphone") {
-          if (
-            !localUserTrack?.audioTrack?.enabled ||
-            !localUserTrack?.videoTrack?.enabled
-          ) {
-            await localUserTrack?.audioTrack!.setEnabled(true);
-            await localUserTrack?.videoTrack!.setEnabled(true);
-          }
-        } else if (message.command === "LEAVE_MEETING") {
-          alert("You have been removed from the broadcast.");
-          await stepLeave();
-          await rtmClient.logout();
+        switch (message.command) {
+          case "mute-microphone":
+            if (
+              localUserTrack?.audioTrack?.enabled ||
+              localUserTrack?.videoTrack?.enabled
+            ) {
+              await localUserTrack?.audioTrack!.setEnabled(false);
+              await localUserTrack?.videoTrack!.setEnabled(false);
+            }
+            break;
+
+          case "unmute-microphone":
+            if (
+              !localUserTrack?.audioTrack?.enabled ||
+              !localUserTrack?.videoTrack?.enabled
+            ) {
+              await localUserTrack?.audioTrack!.setEnabled(true);
+              await localUserTrack?.videoTrack!.setEnabled(true);
+            }
+            break;
+
+          case "LEAVE_MEETING":
+            alert("You have been removed from the broadcast.");
+            await stepLeave();
+            await rtmClient.logout();
+            break;
+
+          default:
+            console.warn(`Unknown command: ${message.command}`);
         }
-      } else if (message.command === "end-screenshare" && message.text) {
-        alert(message.text);
+      } else {
+        switch (message.command) {
+          // case "stop-remote-screenshare": {
+          //   alert(message.text);
+
+          //   const uid = message.uid;
+          //   setRemoteScreenShareUsers((prevUsers) => ({
+          //     ...prevUsers,
+          //     [uid]: {
+          //       ...prevUsers![uid],
+          //       videoTrack: null,
+          //     },
+          //   }));
+          //   break;
+          // }
+
+          case "give-host":
+            console.log(`${message.uid} has been granted host permissions.`)
+            alert(`${message.uid} has been granted host permissions.`);
+            break;
+
+          case "stop-remote-screenshare": {
+            // if (screenTrack?.screenVideoTrack) {
+            //   await rtcScreenShareClient.unpublish([screenTrack.screenVideoTrack]);
+            //   screenTrack.screenVideoTrack.stop();
+            // }
+            // if (screenTrack?.screenAudioTrack) {
+            //   await rtcScreenShareClient.unpublish([screenTrack.screenAudioTrack]);
+            //   screenTrack.screenAudioTrack.stop();
+            // }
+        
+            // setScreenTrack(null);
+
+            let uid: string | number ;
+            if (Object.keys(remoteUsers).length > 0) {
+              uid = Object.keys(remoteUsers)[0];
+              console.log('This is the place', remoteUsers);
+              alert(`THIS IS UID, ${uid}`)
+            }
+            
+            handleEndRemoteScreenTrack();
+            
+            
+            break;
+          }
+
+
+          default:
+            console.warn(`Unknown command for other user: ${message.command}`);
+        }
       }
     });
+
+    // channel.on("ChannelMessage", async ({ text }: any) => {
+    //   const message = JSON.parse(text);
+    //   if (message.uid === options.uid) {
+    //     if (message.command === "mute-microphone") {
+    //       if (
+    //         localUserTrack?.audioTrack?.enabled ||
+    //         localUserTrack?.videoTrack?.enabled
+    //       ) {
+    //         await localUserTrack?.audioTrack!.setEnabled(false);
+    //         await localUserTrack?.videoTrack!.setEnabled(false);
+    //       }
+    //     } else if (message.command === "unmute-microphone") {
+    //       if (
+    //         !localUserTrack?.audioTrack?.enabled ||
+    //         !localUserTrack?.videoTrack?.enabled
+    //       ) {
+    //         await localUserTrack?.audioTrack!.setEnabled(true);
+    //         await localUserTrack?.videoTrack!.setEnabled(true);
+    //       }
+    //     } else if (message.command === "LEAVE_MEETING") {
+    //       alert("You have been removed from the broadcast.");
+    //       await stepLeave();
+    //       await rtmClient.logout();
+    //     }
+    //   } else {
+    //     if (message.command === "stop-remote-screenshare") {
+    //       alert(message.text);
+
+    //       const uid = message.uid;
+    //       // setScreenTrack(null);
+
+    //       setRemoteScreenShareUsers((prevUsers) => ({
+    //         ...prevUsers,
+    //         [uid]: {
+    //           ...prevUsers![uid],
+    //           videoTrack: null,
+    //         },
+    //       }));
+    //       setRemoteUsers((prevUsers) => ({
+    //         ...prevUsers,
+    //         [uid]: {
+    //           ...prevUsers![uid],
+    //           videoTrack: null,
+    //         },
+    //       }));
+    //     }
+    //   }
+    // });
   };
 
   const handleUserLeft = async (user: any) => {
@@ -379,7 +490,43 @@ export const AgoraKit: React.FC = () => {
         videoTrack: null,
       },
     }));
+    rtmChannel.sendMessage({
+      text: JSON.stringify({ command: "stop-remote-screenshare", uid }),
+    });
   };
+
+  const handleEndRemoteScreenTrack = () => {
+    if (screenTrack?.screenVideoTrack) {
+      screenTrack.screenVideoTrack.stop();
+    }
+    if (screenTrack?.screenAudioTrack) {
+      screenTrack.screenAudioTrack.stop();
+    }
+
+    setScreenTrack(null);
+
+    const uid = Object.keys(remoteScreenShareUsers!)[0];
+    setRemoteScreenShareUsers((prevUsers) => ({
+      ...prevUsers,
+      [uid]: {
+        ...prevUsers![uid],
+        videoTrack: null,
+      },
+    }));
+  }
+
+  async function sendHostPermission(message: string, uid: string | number) {
+    try {
+      // Assuming you have an API endpoint to send host permissions
+      rtmChannel.sendMessage({
+        text: JSON.stringify({ command: message, uid }),
+      });
+    } catch (error) {
+      console.error("Error sending host permission:", error);
+    }
+  }
+
+  // message.command === "end-screenshare" && message.text
 
   const handleConfigureWaitingArea = async () => {
     const [audioTrack, videoTrack] = await Promise.all([
@@ -698,6 +845,14 @@ export const AgoraKit: React.FC = () => {
                           >
                             <span>❌</span>
                           </button>
+                          <button
+                            className="px-2 py-1 text-sm rounded bg-blue-500 hover:bg-blue-600 text-white"
+                            onClick={() => {
+                              sendHostPermission("give-host", uid);
+                            }}
+                          >
+                            Give host
+                          </button>
                         </p>
                       );
                     })}
@@ -709,7 +864,7 @@ export const AgoraKit: React.FC = () => {
               <div className="flex flex-wrap gap-4">
                 {localUserTrack &&
                   (stage === "prepRoom" || stage === "joinRoom") && (
-                    <section className="border rounded shadow-md mb-4 w-full lg:w-1/2">
+                    <section className="border rounded shadow-md mb-4">
                       <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
                         Local Stream
                       </div>
