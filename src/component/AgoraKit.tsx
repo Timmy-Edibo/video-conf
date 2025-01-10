@@ -543,15 +543,17 @@ export const AgoraKit: React.FC = () => {
         rtcScreenShareClient.setClientRole(rtcScreenShareOptions.role);
       }
 
-      rtcScreenShareOptions &&
-        rtcScreenShareOptions.uid &&
-        `${parseInt(`${rtcScreenShareOptions.uid}`) + 1}`;
-      rtcScreenShareOptions.uid = await rtcScreenShareClient.join(
-        rtcScreenShareOptions.appid || "",
-        rtcScreenShareOptions.channel || "",
-        rtcScreenShareOptions.rtcToken || null,
-        rtcScreenShareOptions.uid || null
-      );
+
+      if (rtcScreenShareOptions) {
+        rtcScreenShareOptions.uid = await rtcScreenShareClient.join(
+          rtcScreenShareOptions.appid || "",
+          rtcScreenShareOptions.channel || "",
+          rtcScreenShareOptions.rtcToken || null,
+          rtcScreenShareOptions.uid || null
+        );
+      }
+
+        
       console.log("room or channel joined successufully");
     }
   };
