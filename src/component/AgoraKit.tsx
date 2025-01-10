@@ -420,8 +420,28 @@ export const AgoraKit: React.FC = () => {
     rtcScreenShareClient = null as any;
   };
 
-  async function sendHostPermission(message: string, uid: string | number) {
+  const sendHostPermission = async (message: string, uid: string | number) => {
     try {
+      const response = await fetch(
+        "https://app.stridez.ca/api/v1/rooms/transfer-host-permissions",
+        {
+          method: "POST",
+          headers: {
+            "Agora-Signature": "stridez@123456789",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+          body: JSON.stringify({
+            roomCode: chan,
+            userId: uid,
+          }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to send host permission");
+      }
+      const data = await response.json();
+      console.log("Host permission sent successfully:", data);
       // Assuming you have an API endpoint to send host permissions
       rtmChannel.sendMessage({
         text: JSON.stringify({ command: message, uid }),
@@ -429,7 +449,38 @@ export const AgoraKit: React.FC = () => {
     } catch (error) {
       console.error("Error sending host permission:", error);
     }
-  }
+  };
+
+  const sendCoHostPermission = async (message: string, uid: string | number) => {
+    try {
+      const response = await fetch(
+        "https://app.stridez.ca/api/v1/rooms/co-host",
+        {
+          method: "POST",
+          headers: {
+            "Agora-Signature": "stridez@123456789",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+          body: JSON.stringify({
+            roomCode: chan,
+            userId: uid,
+          }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to send host permission");
+      }
+      const data = await response.json();
+      console.log("Host permission sent successfully:", data);
+      // Assuming you have an API endpoint to send host permissions
+      rtmChannel.sendMessage({
+        text: JSON.stringify({ command: message, uid }),
+      });
+    } catch (error) {
+      console.error("Error sending host permission:", error);
+    }
+  };
 
   const handleConfigureWaitingArea = async () => {
     const [audioTrack, videoTrack] = await Promise.all([
@@ -543,9 +594,10 @@ export const AgoraKit: React.FC = () => {
         rtcScreenShareClient.setClientRole(rtcScreenShareOptions.role);
       }
 
-      rtcScreenShareOptions &&
-        rtcScreenShareOptions.uid &&
-        `${parseInt(`${rtcScreenShareOptions.uid}`) + 1}`;
+      if (rtcScreenShareOptions && rtcScreenShareOptions.uid) {
+        rtcScreenShareOptions.uid =
+          parseInt(`${rtcScreenShareOptions.uid}`) + 1;
+      }
       rtcScreenShareOptions.uid = await rtcScreenShareClient.join(
         rtcScreenShareOptions.appid || "",
         rtcScreenShareOptions.channel || "",
@@ -753,6 +805,14 @@ export const AgoraKit: React.FC = () => {
                             }}
                           >
                             Give host
+                          </button>
+                          <button
+                            className="px-2 py-1 text-sm rounded bg-blue-500 hover:bg-blue-600 text-white"
+                            onClick={() => {
+                              sendCoHostPermission("give-cohost", uid);
+                            }}
+                          >
+                            Give Co-host
                           </button>
                         </p>
                       );
