@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, act } from "react";
 import { CamSelect } from "./CamSelect";
 import { MicSelect } from "./MicSelect";
 import { StreamPlayer } from "./StreamPlayer";
@@ -115,36 +115,27 @@ export const AgoraKit: React.FC = () => {
     if (chan && username) {
       const fetchAgoraData = async () => {
         try {
-          const { rtcOptions, rtmOptions } = await agoraGetAppData(chan);
+          const rtcData = await agoraGetAppData(chan);
+          const { joinRoom, client } = rtcData;
 
           setOptions((prev) => ({
             ...prev,
-            appid: rtcOptions.appId,
-            rtcToken: rtcOptions.token.tokenWithUid,
-            rtmToken: rtmOptions.token,
-            certificate: rtcOptions.appCertificate,
-            uid: rtcOptions.uid,
-            channel: rtcOptions.channelName,
+            appid: client[0].appId,
+            rtcToken: client[0].rtcToken,
+            rtmToken: client[0].rtmToken,
+            certificate: client[0].appCertificate,
+            uid: client[0].uid,
+            channel: client[0].channelName,
           }));
-        } catch (error) {
-          console.error("Error fetching Agora data:", error);
-        }
-      };
-
-      fetchAgoraData();
-
-      const fetchAgoraScreenShareData = async () => {
-        try {
-          const { rtcOptions, rtmOptions } = await agoraGetAppData(chan);
 
           setRtcScreenShareOptions((prev) => ({
             ...prev,
-            appid: rtcOptions.appId,
-            rtcToken: rtcOptions.token.tokenWithUid,
-            rtmToken: rtmOptions.token,
-            certificate: rtcOptions.appCertificate,
-            uid: rtcOptions.uid,
-            channel: rtcOptions.channelName,
+            appid: client[1].appId,
+            rtcToken: client[1].rtcToken,
+            rtmToken: client[1].rtmToken,
+            certificate: client[1].appCertificate,
+            uid: client[1].uid,
+            channel: client[1].channelName,
           }));
         } catch (error) {
           console.error("Error fetching Agora data:", error);
@@ -152,7 +143,6 @@ export const AgoraKit: React.FC = () => {
       };
 
       fetchAgoraData();
-      fetchAgoraScreenShareData();
       setJoinDisabled(false);
     }
   }, [chan, username]);
@@ -196,14 +186,7 @@ export const AgoraKit: React.FC = () => {
     await handleScreenTrackEnd();
 
     rtmChannel.sendMessage({
-      text: JSON.stringify({
-        command: action,
-        text: `${uid} has stopped presenting`,
-      }),
-    });
-
-    rtmChannel.sendMessage({
-      text: JSON.stringify({ command: "stop-remote-screenshare", uid }),
+      text: JSON.stringify({ command: action, uid }),
     });
   };
 
@@ -284,90 +267,31 @@ export const AgoraKit: React.FC = () => {
           // }
 
           case "give-host":
-            console.log(`${message.uid} has been granted host permissions.`)
+            console.log(`${message.uid} has been granted host permissions.`);
             alert(`${message.uid} has been granted host permissions.`);
             break;
 
-          case "stop-remote-screenshare": {
-            // if (screenTrack?.screenVideoTrack) {
-            //   await rtcScreenShareClient.unpublish([screenTrack.screenVideoTrack]);
-            //   screenTrack.screenVideoTrack.stop();
-            // }
-            // if (screenTrack?.screenAudioTrack) {
-            //   await rtcScreenShareClient.unpublish([screenTrack.screenAudioTrack]);
-            //   screenTrack.screenAudioTrack.stop();
-            // }
-        
-            // setScreenTrack(null);
+          case "end-screenshare": {
+            alert(`THIS IS UID, ${message.uid}`);
 
-            let uid: string | number ;
-            if (Object.keys(remoteUsers).length > 0) {
-              uid = Object.keys(remoteUsers)[0];
-              console.log('This is the place', remoteUsers);
-              alert(`THIS IS UID, ${uid}`)
-            }
-            
-            handleEndRemoteScreenTrack();
-            
-            
+            const uid = message.uid;
+            const updatedUsers = { ...remoteUsersRef.current };
+            delete updatedUsers[uid];
+            remoteUsersRef.current = updatedUsers;
+            setRemoteUsers(updatedUsers);
+
+            const updatedScreenUsers = { ...remoteScreenShareUsersRef.current };
+            delete updatedScreenUsers[uid];
+            remoteScreenShareUsersRef.current = updatedScreenUsers;
+            setRemoteScreenShareUsers(updatedScreenUsers);
             break;
           }
-
 
           default:
             console.warn(`Unknown command for other user: ${message.command}`);
         }
       }
     });
-
-    // channel.on("ChannelMessage", async ({ text }: any) => {
-    //   const message = JSON.parse(text);
-    //   if (message.uid === options.uid) {
-    //     if (message.command === "mute-microphone") {
-    //       if (
-    //         localUserTrack?.audioTrack?.enabled ||
-    //         localUserTrack?.videoTrack?.enabled
-    //       ) {
-    //         await localUserTrack?.audioTrack!.setEnabled(false);
-    //         await localUserTrack?.videoTrack!.setEnabled(false);
-    //       }
-    //     } else if (message.command === "unmute-microphone") {
-    //       if (
-    //         !localUserTrack?.audioTrack?.enabled ||
-    //         !localUserTrack?.videoTrack?.enabled
-    //       ) {
-    //         await localUserTrack?.audioTrack!.setEnabled(true);
-    //         await localUserTrack?.videoTrack!.setEnabled(true);
-    //       }
-    //     } else if (message.command === "LEAVE_MEETING") {
-    //       alert("You have been removed from the broadcast.");
-    //       await stepLeave();
-    //       await rtmClient.logout();
-    //     }
-    //   } else {
-    //     if (message.command === "stop-remote-screenshare") {
-    //       alert(message.text);
-
-    //       const uid = message.uid;
-    //       // setScreenTrack(null);
-
-    //       setRemoteScreenShareUsers((prevUsers) => ({
-    //         ...prevUsers,
-    //         [uid]: {
-    //           ...prevUsers![uid],
-    //           videoTrack: null,
-    //         },
-    //       }));
-    //       setRemoteUsers((prevUsers) => ({
-    //         ...prevUsers,
-    //         [uid]: {
-    //           ...prevUsers![uid],
-    //           videoTrack: null,
-    //         },
-    //       }));
-    //     }
-    //   }
-    // });
   };
 
   const handleUserLeft = async (user: any) => {
@@ -376,6 +300,14 @@ export const AgoraKit: React.FC = () => {
     delete updatedUsers[uid];
     remoteUsersRef.current = updatedUsers;
     setRemoteUsers(updatedUsers);
+  };
+
+  const handleScreenShareUserLeft = async (user: any) => {
+    const uid = String(user.uid);
+    const updatedScreenShareUsers = { ...remoteScreenShareUsersRef.current };
+    delete updatedScreenShareUsers[uid];
+    remoteScreenShareUsersRef.current = updatedScreenShareUsers;
+    setRemoteScreenShareUsers(updatedScreenShareUsers);
   };
 
   const leaveRtmChannel = async () => {
@@ -428,41 +360,44 @@ export const AgoraKit: React.FC = () => {
 
   const handleShareScreen = async () => {
     try {
-      // Create screen sharing tracks
-      const screenTracks = await AgoraRTC.createScreenVideoTrack(
-        {
-          encoderConfig: "1080p_1",
-          optimizationMode: "detail",
-        },
-        "auto"
-      );
+      await joinRtcScreenShare();
+      if (rtcScreenShareClient) {
+        // Create screen sharing tracks
+        const screenTracks = await AgoraRTC.createScreenVideoTrack(
+          {
+            encoderConfig: "1080p_1",
+            optimizationMode: "detail",
+          },
+          "auto"
+        );
 
-      // Separate video and audio tracks
-      const screenVideoTrack =
-        screenTracks instanceof Array ? screenTracks[0] : screenTracks;
-      const screenAudioTrack =
-        screenTracks instanceof Array ? screenTracks[1] : null;
+        // Separate video and audio tracks
+        const screenVideoTrack =
+          screenTracks instanceof Array ? screenTracks[0] : screenTracks;
+        const screenAudioTrack =
+          screenTracks instanceof Array ? screenTracks[1] : null;
 
-      if (!screenVideoTrack) {
-        console.error("Failed to create screen video track.");
-        return;
-      }
+        if (!screenVideoTrack) {
+          console.error("Failed to create screen video track.");
+          return;
+        }
 
-      // Bind the "track-ended" event to handle stop sharing
-      screenVideoTrack.on("track-ended", handleScreenTrackEnd);
+        // Bind the "track-ended" event to handle stop sharing
+        screenVideoTrack.on("track-ended", handleScreenTrackEnd);
 
-      // Update screenTrack state
-      setScreenTrack({
-        screenVideoTrack,
-        screenAudioTrack,
-      });
+        // Update screenTrack state
+        setScreenTrack({
+          screenVideoTrack,
+          screenAudioTrack,
+        });
 
-      if (screenVideoTrack) {
-        await rtcScreenShareClient.publish([screenVideoTrack]);
-      }
+        if (screenVideoTrack) {
+          await rtcScreenShareClient.publish([screenVideoTrack]);
+        }
 
-      if (screenAudioTrack) {
-        await rtcScreenShareClient.publish([screenAudioTrack]);
+        if (screenAudioTrack) {
+          await rtcScreenShareClient.publish([screenAudioTrack]);
+        }
       }
     } catch (error) {
       console.error("Error during screen sharing:", error);
@@ -472,48 +407,18 @@ export const AgoraKit: React.FC = () => {
   const handleScreenTrackEnd = async () => {
     // Unpublish and reset the screen tracks
     if (screenTrack?.screenVideoTrack) {
-      await rtcScreenShareClient.unpublish([screenTrack.screenVideoTrack]);
+      screenTrack.screenVideoTrack.close();
       screenTrack.screenVideoTrack.stop();
     }
     if (screenTrack?.screenAudioTrack) {
-      await rtcScreenShareClient.unpublish([screenTrack.screenAudioTrack]);
+      screenTrack.screenAudioTrack.close();
       screenTrack.screenAudioTrack.stop();
     }
-
     setScreenTrack(null);
-
-    const uid = Object.keys(remoteScreenShareUsers!)[0];
-    setRemoteScreenShareUsers((prevUsers) => ({
-      ...prevUsers,
-      [uid]: {
-        ...prevUsers![uid],
-        videoTrack: null,
-      },
-    }));
-    rtmChannel.sendMessage({
-      text: JSON.stringify({ command: "stop-remote-screenshare", uid }),
-    });
+    await rtcScreenShareClient.unpublish();
+    await rtcScreenShareClient.leave();
+    rtcScreenShareClient = null as any;
   };
-
-  const handleEndRemoteScreenTrack = () => {
-    if (screenTrack?.screenVideoTrack) {
-      screenTrack.screenVideoTrack.stop();
-    }
-    if (screenTrack?.screenAudioTrack) {
-      screenTrack.screenAudioTrack.stop();
-    }
-
-    setScreenTrack(null);
-
-    const uid = Object.keys(remoteScreenShareUsers!)[0];
-    setRemoteScreenShareUsers((prevUsers) => ({
-      ...prevUsers,
-      [uid]: {
-        ...prevUsers![uid],
-        videoTrack: null,
-      },
-    }));
-  }
 
   async function sendHostPermission(message: string, uid: string | number) {
     try {
@@ -525,8 +430,6 @@ export const AgoraKit: React.FC = () => {
       console.error("Error sending host permission:", error);
     }
   }
-
-  // message.command === "end-screenshare" && message.text
 
   const handleConfigureWaitingArea = async () => {
     const [audioTrack, videoTrack] = await Promise.all([
@@ -616,39 +519,41 @@ export const AgoraKit: React.FC = () => {
   };
 
   const joinRtcScreenShare = async () => {
-    rtcScreenShareClient = AgoraRTC.createClient({
-      mode: "live",
-      codec: "vp8",
-    });
-
-    rtcClient.on("user-left", handleUserLeft);
-    rtcScreenShareClient.on("user-published", handleUserPublishedScreen);
-    rtcScreenShareClient.on("user-unpublished", handleUserUnpublishedScreen);
-
-    const mode = rtcScreenShareOptions?.proxyMode ?? 0;
-    if (mode !== 0 && !isNaN(parseInt(mode))) {
-      rtcScreenShareClient.startProxyServer(parseInt(mode));
-    }
-
-    if (rtcScreenShareOptions.role === "audience") {
-      rtcScreenShareClient.setClientRole(rtcScreenShareOptions.role, {
-        level: rtcScreenShareOptions.audienceLatency,
+    if (!rtcScreenShareClient) {
+      rtcScreenShareClient = AgoraRTC.createClient({
+        mode: "live",
+        codec: "vp8",
       });
-      // add event listener to play remote tracks when remote user publishs.
-    } else if (rtcScreenShareOptions.role === "host") {
-      rtcScreenShareClient.setClientRole(rtcScreenShareOptions.role);
-    }
 
-    const uid =
+      rtcScreenShareClient.on("user-left", handleScreenShareUserLeft);
+      rtcScreenShareClient.on("user-published", handleUserPublishedScreen);
+      rtcScreenShareClient.on("user-unpublished", handleUserUnpublishedScreen);
+
+      const mode = rtcScreenShareOptions?.proxyMode ?? 0;
+      if (mode !== 0 && !isNaN(parseInt(mode))) {
+        rtcScreenShareClient.startProxyServer(parseInt(mode));
+      }
+
+      if (rtcScreenShareOptions.role === "audience") {
+        rtcScreenShareClient.setClientRole(rtcScreenShareOptions.role, {
+          level: rtcScreenShareOptions.audienceLatency,
+        });
+        // add event listener to play remote tracks when remote user publishs.
+      } else if (rtcScreenShareOptions.role === "host") {
+        rtcScreenShareClient.setClientRole(rtcScreenShareOptions.role);
+      }
+
       rtcScreenShareOptions &&
-      rtcScreenShareOptions.uid &&
-      `${parseInt(`${rtcScreenShareOptions.uid}`) + 1}`;
-    rtcScreenShareOptions.uid = await rtcScreenShareClient.join(
-      rtcScreenShareOptions.appid || "",
-      rtcScreenShareOptions.channel || "",
-      rtcScreenShareOptions.rtcToken || null,
-      rtcScreenShareOptions.uid || null
-    );
+        rtcScreenShareOptions.uid &&
+        `${parseInt(`${rtcScreenShareOptions.uid}`) + 1}`;
+      rtcScreenShareOptions.uid = await rtcScreenShareClient.join(
+        rtcScreenShareOptions.appid || "",
+        rtcScreenShareOptions.channel || "",
+        rtcScreenShareOptions.rtcToken || null,
+        rtcScreenShareOptions.uid || null
+      );
+      console.log("room or channel joined successufully");
+    }
   };
 
   const handleUserPublished = (user: any, mediaType: "audio" | "video") => {
@@ -656,8 +561,6 @@ export const AgoraKit: React.FC = () => {
   };
 
   const handleUserUnpublished = (user: any, mediaType: "audio" | "video") => {
-    console.log("Checking if this event was called.........", remoteUsers);
-
     const uid = String(user.uid);
     setRemoteUsers((prevUsers) => ({
       ...prevUsers,
@@ -668,19 +571,17 @@ export const AgoraKit: React.FC = () => {
     }));
   };
 
-  const handleUserPublishedScreen = (
+  const handleUserPublishedScreen = async (
     user: any,
     mediaType: "audio" | "video"
   ) => {
-    rtcSubscribeScreen(user, mediaType);
+    await rtcSubscribeScreen(user, mediaType);
   };
 
   const handleUserUnpublishedScreen = (
     user: any,
     mediaType: "audio" | "video"
   ) => {
-    console.log("Checking if this event was called.........", remoteUsers);
-
     const uid = String(user.uid);
     setRemoteScreenShareUsers((prevUsers) => ({
       ...prevUsers,
@@ -983,7 +884,7 @@ export const AgoraKit: React.FC = () => {
             onClick={() => {
               handleEndScreenShare(
                 "end-screenshare",
-                parseInt(`${options.uid}`)
+                parseInt(`${rtcScreenShareOptions.uid}`)
               );
             }}
           >

@@ -1,19 +1,15 @@
-export const fetchToken = async (
-    url: string,
-    data: Record<string, unknown>
-) => {
+import Cookies from "js-cookie"
+
+export const fetchToken = async (url: string) => {
     const response = await fetch(url, {
-        method: "POST",
+        method: "GET",
         headers: {
             "Agora-Signature": "stridez@123456789",
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${Cookies.get("accessToken")}`
         },
-        body: JSON.stringify(data),
     });
-
-    // Parse JSON response
     const jsonResp = await response.json();
-
     if (!response.ok) {
         console.log("response: An error occured fetching token ");
     } else {
@@ -24,21 +20,10 @@ export const fetchToken = async (
 
 
 export const agoraGetAppData = async (channel: string) => {
-    const rtcUrl = `https://app.stridez.ca/api/v1/agora/rtcToken`;
-    const rtmUrl = `https://app.stridez.ca/api/v1/agora/rtmToken`;
-    const data = {
-        channelName: channel,
-        uid: generateUid(),
-    };
-
-    const [rtcOptions, rtmOptions] = await Promise.all([
-        fetchToken(rtcUrl, data),
-        fetchToken(rtmUrl, data),
-    ]);
-
-    console.log("promise result;", rtcOptions, rtmOptions);
-
-    return { rtcOptions, rtmOptions };
+    const initUrl = `https://app.stridez.ca/api/v1/rooms/join-meeting/${channel}`;
+    const rtcData = await fetchToken(initUrl)
+    console.log("promise result;", rtcData);
+    return rtcData;
 };
 
 
