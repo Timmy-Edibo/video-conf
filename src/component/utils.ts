@@ -13,7 +13,7 @@ export const fetchToken = async (url: string) => {
     if (!response.ok) {
         console.log("response: An error occured fetching token ");
     } else {
-        console.log("response: " + JSON.stringify(jsonResp.data));
+        // console.log("response: " + JSON.stringify(jsonResp.data));
         return jsonResp.data;
     }
 };

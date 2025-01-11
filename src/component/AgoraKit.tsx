@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, act } from "react";
+import React, { useState, useRef, useEffect, act, useCallback } from "react";
 import { CamSelect } from "./CamSelect";
 import { MicSelect } from "./MicSelect";
 import { StreamPlayer } from "./StreamPlayer";
@@ -68,6 +68,9 @@ export const AgoraKit: React.FC = () => {
     string,
     any
   > | null>({});
+  const [meetingRoomData, setMeetingRoomData] = useState<any | null>(null);
+  const [userIsHost, setUserIsHost] = useState(false);
+  const [userIsCoHost, setUserIsCoHost] = useState(false);
 
   const [joinRoom, setJoinRoom] = useState(false);
   const [stage, setStage] = useState("prepRoom");
@@ -144,6 +147,7 @@ export const AgoraKit: React.FC = () => {
 
       fetchAgoraData();
       setJoinDisabled(false);
+      fetchMeetingRoomData();
     }
   }, [chan, username]);
 
@@ -269,6 +273,13 @@ export const AgoraKit: React.FC = () => {
           case "give-host":
             console.log(`${message.uid} has been granted host permissions.`);
             alert(`${message.uid} has been granted host permissions.`);
+            fetchMeetingRoomData();
+            break;
+
+          case "give-cohost":
+            console.log(`${message.uid} has been granted cohost permissions.`);
+            alert(`${message.uid} has been granted host permissions.`);
+            fetchMeetingRoomData();
             break;
 
           case "end-screenshare": {
@@ -355,6 +366,7 @@ export const AgoraKit: React.FC = () => {
     // document
     //   .getElementById("members")
     //   .insertAdjacentHTML("beforeend", newMember);
+    fetchMeetingRoomData();
     console.log("rtm clients........", name, userRtcUid, userAvatar);
   };
 
@@ -420,8 +432,39 @@ export const AgoraKit: React.FC = () => {
     rtcScreenShareClient = null as any;
   };
 
-  async function sendHostPermission(message: string, uid: string | number) {
+  // async function sendHostPermission(message: string, uid: string | number) {
+  //   try {
+  //     // Assuming you have an API endpoint to send host permissions
+  //     rtmChannel.sendMessage({
+  //       text: JSON.stringify({ command: message, uid }),
+  //     });
+  //   } catch (error) {
+  //     console.error("Error sending host permission:", error);
+  //   }
+  // }
+
+  const sendHostPermission = async (message: string, uid: string | number) => {
     try {
+      const response = await fetch(
+        "https://app.stridez.ca/api/v1/rooms/transfer-host-permissions",
+        {
+          method: "POST",
+          headers: {
+            "Agora-Signature": "stridez@123456789",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+          body: JSON.stringify({
+            roomCode: chan,
+            userId: uid,
+          }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to send host permission");
+      }
+      const data = await response.json();
+      console.log("Host permission sent successfully:", data);
       // Assuming you have an API endpoint to send host permissions
       rtmChannel.sendMessage({
         text: JSON.stringify({ command: message, uid }),
@@ -429,7 +472,94 @@ export const AgoraKit: React.FC = () => {
     } catch (error) {
       console.error("Error sending host permission:", error);
     }
-  }
+  };
+
+  const sendCoHostPermission = async (
+    message: string,
+    uid: string | number
+  ) => {
+    try {
+      const response = await fetch(
+        "https://app.stridez.ca/api/v1/rooms/add-cohost",
+        {
+          method: "POST",
+          headers: {
+            "Agora-Signature": "stridez@123456789",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+          body: JSON.stringify({
+            roomCode: chan,
+            userId: uid,
+          }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to send cohost permission");
+      }
+      const data = await response.json();
+      console.log("Cohost permission sent successfully:", data);
+      // Assuming you have an API endpoint to send host permissions
+      rtmChannel.sendMessage({
+        text: JSON.stringify({ command: message, uid }),
+      });
+    } catch (error) {
+      console.error("Error sending cohost permission:", error);
+    }
+  };
+
+  const fetchMeetingRoomData = async () => {
+    try {
+      const response = await fetch(
+        `https://app.stridez.ca/api/v1/rooms/join-meeting/${chan}`,
+        {
+          method: "GET",
+          headers: {
+            "Agora-Signature": "stridez@123456789",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to get meeting room data");
+      }
+      const data = await response.json();
+      setMeetingRoomData(data.data);
+      console.log("Meeting room data fetched successfully:", data);
+      handleMeetingHostAndCohost();
+      console.log("cohost user", userIsCoHost);
+      console.log("user is host", userIsHost);
+    } catch (error) {
+      console.error("Error fetching meeting room data:", error);
+    }
+  };
+
+  const handleMeetingHostAndCohost = useCallback(() => {
+    if (meetingRoomData) {
+      console.log("meeting room data", meetingRoomData);
+
+      const isHost = meetingRoomData?.room?.roomSubscribers?.some(
+        (user: { isOwner: boolean }) => user.isOwner
+      );
+
+      const isCoHost = meetingRoomData?.room?.roomSubscribers?.some(
+        (user: { isCoHost: boolean }) => user.isCoHost
+      );
+
+      setUserIsHost(isHost);
+      setUserIsCoHost(isCoHost);
+
+      // Logs might not show updated states immediately due to async updates.
+      console.log("user is host", isHost);
+      console.log("user is co-host", isCoHost);
+    }
+  }, [meetingRoomData]);
+
+  // Ensure the function runs when meetingRoomData changes
+  useEffect(() => {
+    handleMeetingHostAndCohost();
+  }, [handleMeetingHostAndCohost ,meetingRoomData]);
 
   const handleConfigureWaitingArea = async () => {
     const [audioTrack, videoTrack] = await Promise.all([
@@ -543,7 +673,6 @@ export const AgoraKit: React.FC = () => {
         rtcScreenShareClient.setClientRole(rtcScreenShareOptions.role);
       }
 
-
       if (rtcScreenShareOptions) {
         rtcScreenShareOptions.uid = await rtcScreenShareClient.join(
           rtcScreenShareOptions.appid || "",
@@ -553,7 +682,6 @@ export const AgoraKit: React.FC = () => {
         );
       }
 
-        
       console.log("room or channel joined successufully");
     }
   };
@@ -718,44 +846,62 @@ export const AgoraKit: React.FC = () => {
                           key={uid}
                         >
                           User: {user?.name} {uid}
-                          <button
-                            className="flex border bg-gray-400"
-                            onClick={() =>
-                              handleMuteRemoteUserMicrophone(
-                                "mute",
-                                parseInt(uid)
-                              )
-                            }
-                          >
-                            <span>🔇</span>
-                          </button>
-                          <button
-                            className="flex border bg-gray-400"
-                            onClick={() =>
-                              handleMuteRemoteUserMicrophone(
-                                "unmute",
-                                parseInt(uid)
-                              )
-                            }
-                          >
-                            <span>🔊</span>
-                          </button>
-                          <button
-                            className="flex border bg-gray-400"
-                            onClick={() =>
-                              handleRemoveUser("LEAVE_MEETING", parseInt(uid))
-                            }
-                          >
-                            <span>❌</span>
-                          </button>
-                          <button
-                            className="px-2 py-1 text-sm rounded bg-blue-500 hover:bg-blue-600 text-white"
-                            onClick={() => {
-                              sendHostPermission("give-host", uid);
-                            }}
-                          >
-                            Give host
-                          </button>
+                          {(userIsHost || userIsCoHost) && (
+                            <>
+                              <button
+                                className="flex border bg-gray-400"
+                                onClick={() =>
+                                  handleMuteRemoteUserMicrophone(
+                                    "mute",
+                                    parseInt(uid)
+                                  )
+                                }
+                              >
+                                <span>🔇</span>
+                              </button>
+                              <button
+                                className="flex border bg-gray-400"
+                                onClick={() =>
+                                  handleMuteRemoteUserMicrophone(
+                                    "unmute",
+                                    parseInt(uid)
+                                  )
+                                }
+                              >
+                                <span>🔊</span>
+                              </button>
+                            </>
+                          )}
+                          {userIsHost && (
+                            <button
+                              className="flex border bg-gray-400"
+                              onClick={() =>
+                                handleRemoveUser("LEAVE_MEETING", parseInt(uid))
+                              }
+                            >
+                              <span>❌</span>
+                            </button>
+                          )}
+                          {(options.uid === meetingRoomData?.room?.userId) && userIsHost && (
+                            <>
+                              <button
+                                className="px-2 py-1 text-sm rounded bg-blue-500 hover:bg-blue-600 text-white"
+                                onClick={() => {
+                                  sendHostPermission("give-host", uid);
+                                }}
+                              >
+                                Give host
+                              </button>
+                              <button
+                                className="px-2 py-1 text-sm rounded bg-blue-500 hover:bg-blue-600 text-white"
+                                onClick={() => {
+                                  sendCoHostPermission("give-cohost", uid);
+                                }}
+                              >
+                                Give cohost
+                              </button>
+                            </>
+                          )}
                         </p>
                       );
                     })}
