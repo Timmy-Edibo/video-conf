@@ -469,6 +469,7 @@ export const AgoraKit: React.FC = () => {
       rtmChannel.sendMessage({
         text: JSON.stringify({ command: message, uid }),
       });
+      fetchMeetingRoomData();
     } catch (error) {
       console.error("Error sending host permission:", error);
     }
@@ -503,6 +504,7 @@ export const AgoraKit: React.FC = () => {
       rtmChannel.sendMessage({
         text: JSON.stringify({ command: message, uid }),
       });
+      fetchMeetingRoomData();
     } catch (error) {
       console.error("Error sending cohost permission:", error);
     }
@@ -539,12 +541,26 @@ export const AgoraKit: React.FC = () => {
     if (meetingRoomData) {
       console.log("meeting room data", meetingRoomData);
 
-      const isHost = meetingRoomData?.room?.roomSubscribers?.some(
-        (user: { isOwner: boolean }) => user.isOwner
+      const isHost = meetingRoomData?.room?.roomSubscribers?.map(
+        (user: { isOwner: boolean; userId: string | number }) => {
+          if (
+            parseInt(`${user.userId}`) === parseInt(`${options.uid}`) &&
+            user.isOwner
+          ) {
+            return true;
+          }
+        }
       );
 
-      const isCoHost = meetingRoomData?.room?.roomSubscribers?.some(
-        (user: { isCoHost: boolean }) => user.isCoHost
+      const isCoHost = meetingRoomData?.room?.roomSubscribers?.map(
+        (user: { isCoHost: boolean; userId: string | number }) => {
+          if (
+            parseInt(`${user.userId}`) === parseInt(`${options.uid}`) &&
+            user.isCoHost
+          ) {
+            return true;
+          }
+        }
       );
 
       setUserIsHost(isHost);
@@ -554,12 +570,12 @@ export const AgoraKit: React.FC = () => {
       console.log("user is host", isHost);
       console.log("user is co-host", isCoHost);
     }
-  }, [meetingRoomData]);
+  }, [meetingRoomData, options]);
 
   // Ensure the function runs when meetingRoomData changes
   useEffect(() => {
     handleMeetingHostAndCohost();
-  }, [handleMeetingHostAndCohost ,meetingRoomData]);
+  }, [handleMeetingHostAndCohost, meetingRoomData]);
 
   const handleConfigureWaitingArea = async () => {
     const [audioTrack, videoTrack] = await Promise.all([
@@ -599,6 +615,7 @@ export const AgoraKit: React.FC = () => {
       setJoinDisabled(true);
       setLeaveDisabled(false);
       await createTrackAndPublish();
+      handleMeetingHostAndCohost();
     } catch (error: any) {
       message.error(error.message || "An error occurred");
       console.error(error);
@@ -828,26 +845,27 @@ export const AgoraKit: React.FC = () => {
                 </div>
               )}
               {/*  Channel Participants */}
-              <section className="w-full border rounded shadow-md">
-                <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
-                  Channel Participants
-                </div>
-                <div className="p-4">
-                  <div id="remote-playerlist" className="h-auto w-full">
-                    <p> Local User: {options?.uid} </p>
 
-                    {Object.keys(remoteUsers).map((uid) => {
-                      const user = remoteUsers[uid];
-                      console.log("remote user", remoteUsers);
-                      return (
-                        // <div className=" flex items-center justify-between"  >
-                        <p
-                          className="flex items-center justify-between"
-                          key={uid}
-                        >
-                          User: {user?.name} {uid}
-                          {(userIsHost || userIsCoHost) && (
-                            <>
+              {userIsHost && (
+                <section className="w-full border rounded shadow-md">
+                  <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
+                    Channel Participants
+                  </div>
+                  <div className="p-4">
+                    <div id="remote-playerlist" className="h-auto w-full">
+                      <p> Local User: {options?.uid} </p>
+
+                      {Object.keys(remoteUsers).map((uid) => {
+                        const user = remoteUsers[uid];
+                        console.log("remote user", remoteUsers);
+                        return (
+                          // <div className=" flex items-center justify-between"  >
+                          <p
+                            className="flex items-center justify-between"
+                            key={uid}
+                          >
+                            User: {user?.name} {uid}
+                            {(userIsHost || userIsCoHost) && (
                               <button
                                 className="flex border bg-gray-400"
                                 onClick={() =>
@@ -859,6 +877,8 @@ export const AgoraKit: React.FC = () => {
                               >
                                 <span>🔇</span>
                               </button>
+                            )}
+                            {(userIsHost || userIsCoHost) && (
                               <button
                                 className="flex border bg-gray-400"
                                 onClick={() =>
@@ -870,20 +890,21 @@ export const AgoraKit: React.FC = () => {
                               >
                                 <span>🔊</span>
                               </button>
-                            </>
-                          )}
-                          {userIsHost && (
-                            <button
-                              className="flex border bg-gray-400"
-                              onClick={() =>
-                                handleRemoveUser("LEAVE_MEETING", parseInt(uid))
-                              }
-                            >
-                              <span>❌</span>
-                            </button>
-                          )}
-                          {(options.uid === meetingRoomData?.room?.userId) && userIsHost && (
-                            <>
+                            )}
+                            {userIsHost && (
+                              <button
+                                className="flex border bg-gray-400"
+                                onClick={() =>
+                                  handleRemoveUser(
+                                    "LEAVE_MEETING",
+                                    parseInt(uid)
+                                  )
+                                }
+                              >
+                                <span>❌</span>
+                              </button>
+                            )}
+                            {userIsHost && (
                               <button
                                 className="px-2 py-1 text-sm rounded bg-blue-500 hover:bg-blue-600 text-white"
                                 onClick={() => {
@@ -892,6 +913,8 @@ export const AgoraKit: React.FC = () => {
                               >
                                 Give host
                               </button>
+                            )}
+                            {userIsHost && (
                               <button
                                 className="px-2 py-1 text-sm rounded bg-blue-500 hover:bg-blue-600 text-white"
                                 onClick={() => {
@@ -900,14 +923,41 @@ export const AgoraKit: React.FC = () => {
                               >
                                 Give cohost
                               </button>
-                            </>
-                          )}
-                        </p>
-                      );
-                    })}
+                            )}
+                          </p>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              </section>
+                </section>
+              )}
+
+              {!userIsHost && !userIsCoHost && (
+                <section className="w-full border rounded shadow-md">
+                  <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
+                    Channel Participants
+                  </div>
+                  <div className="p-4">
+                    <div id="remote-playerlist" className="h-auto w-full">
+                      <p> Local User: {options?.uid} </p>
+
+                      {Object.keys(remoteUsers).map((uid) => {
+                        const user = remoteUsers[uid];
+                        console.log("remote user", remoteUsers);
+                        return (
+                          // <div className=" flex items-center justify-between"  >
+                          <p
+                            className="flex items-center justify-between"
+                            key={uid}
+                          >
+                            User: {user?.name} {uid}
+                          </p>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </section>
+              )}
 
               {/* Local Stream */}
               <div className="flex flex-wrap gap-4">
