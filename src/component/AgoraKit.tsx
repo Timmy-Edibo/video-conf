@@ -366,7 +366,7 @@ export const AgoraKit: React.FC = () => {
     // document
     //   .getElementById("members")
     //   .insertAdjacentHTML("beforeend", newMember);
-    fetchMeetingRoomData();
+    // fetchMeetingRoomData();
     console.log("rtm clients........", name, userRtcUid, userAvatar);
   };
 
@@ -541,34 +541,26 @@ export const AgoraKit: React.FC = () => {
     if (meetingRoomData) {
       console.log("meeting room data", meetingRoomData);
 
-      const isHost = meetingRoomData?.room?.roomSubscribers?.map(
+      const isHost = meetingRoomData?.room?.roomSubscribers?.some(
         (user: { isOwner: boolean; userId: string | number }) => {
-          if (
+          return (
             parseInt(`${user.userId}`) === parseInt(`${options.uid}`) &&
             user.isOwner
-          ) {
-            return true;
-          }
+          );
         }
       );
 
-      const isCoHost = meetingRoomData?.room?.roomSubscribers?.map(
+      const isCoHost = meetingRoomData?.room?.roomSubscribers?.some(
         (user: { isCoHost: boolean; userId: string | number }) => {
-          if (
+          return (
             parseInt(`${user.userId}`) === parseInt(`${options.uid}`) &&
             user.isCoHost
-          ) {
-            return true;
-          }
+          );
         }
       );
 
       setUserIsHost(isHost);
       setUserIsCoHost(isCoHost);
-
-      // Logs might not show updated states immediately due to async updates.
-      console.log("user is host", isHost);
-      console.log("user is co-host", isCoHost);
     }
   }, [meetingRoomData, options]);
 
@@ -846,7 +838,8 @@ export const AgoraKit: React.FC = () => {
               )}
               {/*  Channel Participants */}
 
-              {userIsHost && (
+
+              {(userIsHost || userIsCoHost) && (
                 <section className="w-full border rounded shadow-md">
                   <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
                     Channel Participants
@@ -878,52 +871,41 @@ export const AgoraKit: React.FC = () => {
                                 <span>🔇</span>
                               </button>
                             )}
-                            {(userIsHost || userIsCoHost) && (
-                              <button
-                                className="flex border bg-gray-400"
-                                onClick={() =>
-                                  handleMuteRemoteUserMicrophone(
-                                    "unmute",
-                                    parseInt(uid)
-                                  )
-                                }
-                              >
-                                <span>🔊</span>
-                              </button>
-                            )}
-                            {userIsHost && (
-                              <button
-                                className="flex border bg-gray-400"
-                                onClick={() =>
-                                  handleRemoveUser(
-                                    "LEAVE_MEETING",
-                                    parseInt(uid)
-                                  )
-                                }
-                              >
-                                <span>❌</span>
-                              </button>
-                            )}
-                            {userIsHost && (
-                              <button
-                                className="px-2 py-1 text-sm rounded bg-blue-500 hover:bg-blue-600 text-white"
-                                onClick={() => {
-                                  sendHostPermission("give-host", uid);
-                                }}
-                              >
-                                Give host
-                              </button>
-                            )}
-                            {userIsHost && (
-                              <button
-                                className="px-2 py-1 text-sm rounded bg-blue-500 hover:bg-blue-600 text-white"
-                                onClick={() => {
-                                  sendCoHostPermission("give-cohost", uid);
-                                }}
-                              >
-                                Give cohost
-                              </button>
-                            )}
+                            <button
+                              className="flex border bg-gray-400"
+                              onClick={() =>
+                                handleMuteRemoteUserMicrophone(
+                                  "unmute",
+                                  parseInt(uid)
+                                )
+                              }
+                            >
+                              <span>🔊</span>
+                            </button>
+                            <button
+                              className="flex border bg-gray-400"
+                              onClick={() =>
+                                handleRemoveUser("LEAVE_MEETING", parseInt(uid))
+                              }
+                            >
+                              <span>❌</span>
+                            </button>
+                            <button
+                              className="px-2 py-1 text-sm rounded bg-blue-500 hover:bg-blue-600 text-white"
+                              onClick={() => {
+                                sendHostPermission("give-host", uid);
+                              }}
+                            >
+                              Give host
+                            </button>
+                            <button
+                              className="px-2 py-1 text-sm rounded bg-blue-500 hover:bg-blue-600 text-white"
+                              onClick={() => {
+                                sendCoHostPermission("give-cohost", uid);
+                              }}
+                            >
+                              Give cohost
+                            </button>
                           </p>
                         );
                       })}
@@ -931,6 +913,7 @@ export const AgoraKit: React.FC = () => {
                   </div>
                 </section>
               )}
+             
 
               {!userIsHost && !userIsCoHost && (
                 <section className="w-full border rounded shadow-md">
