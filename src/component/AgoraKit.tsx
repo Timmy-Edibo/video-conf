@@ -838,7 +838,6 @@ export const AgoraKit: React.FC = () => {
               )}
               {/*  Channel Participants */}
 
-
               {(userIsHost || userIsCoHost) && (
                 <section className="w-full border rounded shadow-md">
                   <div className="bg-gray-100 text-gray-700 font-semibold px-4 py-2 border-b">
@@ -871,7 +870,7 @@ export const AgoraKit: React.FC = () => {
                                 <span>🔇</span>
                               </button>
                             )}
-                            <button
+                            {/* <button
                               className="flex border bg-gray-400"
                               onClick={() =>
                                 handleMuteRemoteUserMicrophone(
@@ -881,31 +880,40 @@ export const AgoraKit: React.FC = () => {
                               }
                             >
                               <span>🔊</span>
-                            </button>
-                            <button
-                              className="flex border bg-gray-400"
-                              onClick={() =>
-                                handleRemoveUser("LEAVE_MEETING", parseInt(uid))
-                              }
-                            >
-                              <span>❌</span>
-                            </button>
-                            <button
-                              className="px-2 py-1 text-sm rounded bg-blue-500 hover:bg-blue-600 text-white"
-                              onClick={() => {
-                                sendHostPermission("give-host", uid);
-                              }}
-                            >
-                              Give host
-                            </button>
-                            <button
-                              className="px-2 py-1 text-sm rounded bg-blue-500 hover:bg-blue-600 text-white"
-                              onClick={() => {
-                                sendCoHostPermission("give-cohost", uid);
-                              }}
-                            >
-                              Give cohost
-                            </button>
+                            </button> */}
+                            {userIsHost && (
+                              <button
+                                className="flex border bg-gray-400"
+                                onClick={() =>
+                                  handleRemoveUser(
+                                    "LEAVE_MEETING",
+                                    parseInt(uid)
+                                  )
+                                }
+                              >
+                                <span>❌</span>
+                              </button>
+                            )}
+                            {userIsHost && (
+                              <button
+                                className="px-2 py-1 text-sm rounded bg-blue-500 hover:bg-blue-600 text-white"
+                                onClick={() => {
+                                  sendHostPermission("give-host", uid);
+                                }}
+                              >
+                                Give host
+                              </button>
+                            )}
+                            {userIsHost && (
+                              <button
+                                className="px-2 py-1 text-sm rounded bg-blue-500 hover:bg-blue-600 text-white"
+                                onClick={() => {
+                                  sendCoHostPermission("give-cohost", uid);
+                                }}
+                              >
+                                Give cohost
+                              </button>
+                            )}
                           </p>
                         );
                       })}
@@ -913,7 +921,6 @@ export const AgoraKit: React.FC = () => {
                   </div>
                 </section>
               )}
-             
 
               {!userIsHost && !userIsCoHost && (
                 <section className="w-full border rounded shadow-md">
